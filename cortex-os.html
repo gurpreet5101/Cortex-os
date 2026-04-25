@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CORTEX // OS — Research Intelligence System</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #02020a;
+  --bg2: #06061a;
+  --pink: #ff00aa;
+  --cyan: #00ffff;
+  --purple: #cc00ff;
+  --yellow: #ffee00;
+  --green: #00ff88;
+  --orange: #ff6600;
+  --white: #ffffff;
+  --offwhite: #e0e0ff;
+  --dim: rgba(255,255,255,0.55);
+  --panel: rgba(0,255,255,0.04);
+  --border: rgba(0,255,255,0.35);
+  --border-pink: rgba(255,0,170,0.5);
+  --gp: 0 0 8px #ff00aa, 0 0 20px #ff00aa, 0 0 50px rgba(255,0,170,0.5);
+  --gc: 0 0 8px #00ffff, 0 0 20px #00ffff, 0 0 50px rgba(0,255,255,0.5);
+  --gg: 0 0 8px #00ff88, 0 0 20px #00ff88, 0 0 40px rgba(0,255,136,0.4);
+  --gv: 0 0 8px #cc00ff, 0 0 20px #cc00ff, 0 0 40px rgba(204,0,255,0.4);
+  --gy: 0 0 8px #ffee00, 0 0 20px #ffee00, 0 0 40px rgba(255,238,0,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: #ffffff;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* ── SCANLINES ── */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.25) 2px,rgba(0,0,0,0.25) 4px);
+  pointer-events:none; z-index:9999;
+  animation: scanroll 8s linear infinite;
+}
+@keyframes scanroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+
+/* ── VIGNETTE ── */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+  pointer-events:none; z-index:9998;
+}
+
+/* ── CANVAS BG ── */
+#bg-canvas {
+  position:fixed; inset:0; z-index:0; opacity:0.4;
+}
+
+/* ── GRID FLOOR ── */
+.grid-floor {
+  position:fixed; bottom:0; left:0; right:0; height:50vh;
+  background:
+    linear-gradient(to bottom, transparent 0%, rgba(0,255,255,0.06) 50%, rgba(255,0,170,0.12) 100%),
+    repeating-linear-gradient(90deg, rgba(0,255,255,0.18) 0, rgba(0,255,255,0.18) 1px, transparent 1px, transparent 80px),
+    repeating-linear-gradient(0deg, rgba(0,255,255,0.18) 0, rgba(0,255,255,0.18) 1px, transparent 1px, transparent 80px);
+  transform: perspective(350px) rotateX(65deg);
+  transform-origin: bottom;
+  pointer-events:none; z-index:0;
+}
+
+/* ── BOOT SCREEN ── */
+#boot {
+  position:fixed; inset:0;
+  background:var(--bg); z-index:10000;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; padding:40px;
+}
+
+.boot-ascii {
+  font-family:'VT323',monospace; font-size:72px; letter-spacing:16px;
+  color:var(--cyan); text-shadow: 0 0 10px #00ffff, 0 0 30px #00ffff, 0 0 80px #00ffff;
+  animation: glitch-text 2s infinite;
+  margin-bottom:4px;
+}
+
+.boot-sub {
+  font-family:'Share Tech Mono',monospace; font-size:13px;
+  color:var(--pink); letter-spacing:4px; text-shadow:var(--gp);
+  margin-bottom:24px;
+}
+
+.bline {
+  font-family:'Share Tech Mono',monospace; font-size:14px;
+  width:580px; max-width:90vw; opacity:0;
+  color: var(--offwhite);
+  animation:fadeIn .05s forwards;
+}
+
+.bline.c { color:var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+.bline.p { color:var(--pink); text-shadow: 0 0 6px var(--pink); }
+.bline.g { color:var(--green); text-shadow: 0 0 6px var(--green); }
+.bline.y { color:var(--yellow); text-shadow: 0 0 6px var(--yellow); }
+.bline.d { color:var(--dim); }
+
+@keyframes fadeIn { to { opacity:1; } }
+
+.boot-progress {
+  width:560px; max-width:90vw; margin-top:16px;
+  height:3px; background:rgba(0,229,255,0.1);
+  border:1px solid rgba(0,229,255,0.2);
+}
+.boot-fill {
+  height:100%; background:linear-gradient(90deg,var(--purple),var(--cyan),var(--pink));
+  width:0; animation:bfill 2.2s ease forwards; box-shadow:var(--gc);
+}
+@keyframes bfill { to { width:100%; } }
+
+/* ── TOPBAR ── */
+#app { display:none; position:relative; z-index:1; min-height:100vh; }
+
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 28px;
+  background:rgba(2,2,10,0.92); backdrop-filter:blur(12px);
+  border-bottom:2px solid var(--cyan);
+  box-shadow: 0 2px 30px rgba(0,255,255,0.2);
+  position:sticky; top:0; z-index:500;
+}
+
+.logo-wrap { display:flex; align-items:center; gap:16px; }
+
+.logo {
+  font-family:'VT323',monospace; font-weight:400; font-size:36px;
+  letter-spacing:8px; color:var(--cyan);
+  text-shadow: 0 0 10px #00ffff, 0 0 25px #00ffff, 0 0 60px rgba(0,255,255,0.6);
+  animation:glitch-text 6s infinite;
+}
+
+.logo em { color:var(--pink); text-shadow:var(--gp); font-style:normal; }
+
+.logo-tag {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  color:var(--cyan); letter-spacing:3px;
+  border:1px solid rgba(0,255,255,0.5);
+  padding:3px 10px; opacity:0.8;
+}
+
+.topbar-right { display:flex; align-items:center; gap:24px; }
+
+.status-pill {
+  display:flex; align-items:center; gap:6px;
+  font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--green);
+  text-shadow: 0 0 8px var(--green);
+}
+
+.pulse {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--green); box-shadow:var(--gg);
+  animation:pulse 1.8s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+.clock-wrap {
+  font-family:'VT323',monospace; font-size:22px;
+  color:var(--cyan); text-shadow:var(--gc); letter-spacing:3px;
+}
+
+/* ── NAV ── */
+.nav {
+  display:flex; gap:0; padding:0 28px;
+  background:rgba(2,2,10,0.9); backdrop-filter:blur(8px);
+  border-bottom:2px solid rgba(255,0,170,0.4);
+  overflow-x:auto;
+}
+
+.nav::-webkit-scrollbar { height:2px; }
+.nav::-webkit-scrollbar-thumb { background:var(--cyan); }
+
+.ntab {
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+  letter-spacing:2px; color:rgba(255,255,255,0.75); background:transparent;
+  border:none; border-bottom:3px solid transparent;
+  padding:12px 18px; cursor:pointer; white-space:nowrap;
+  transition:all .2s; text-transform:uppercase;
+}
+
+.ntab:hover { color:var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+.ntab.active {
+  color:var(--cyan); text-shadow:var(--gc);
+  border-bottom-color:var(--cyan);
+  background:rgba(0,255,255,0.07);
+}
+
+/* ── CONTENT ── */
+.content { padding:24px 28px; max-width:1500px; margin:0 auto; }
+.module { display:none; animation:fadeIn .3s; }
+.module.active { display:block; }
+
+/* ── PANEL ── */
+.panel {
+  background: linear-gradient(135deg, rgba(0,255,255,0.04) 0%, rgba(255,0,170,0.03) 100%);
+  border:1px solid rgba(0,255,255,0.4);
+  padding:20px; margin-bottom:18px;
+  position:relative; overflow:hidden;
+  transition:border-color .3s, box-shadow .3s;
+  box-shadow: inset 0 0 30px rgba(0,255,255,0.03), 0 0 1px rgba(0,255,255,0.3);
+}
+
+/* HUD corner brackets — thick and visible */
+.panel::before {
+  content:'';
+  position:absolute; top:-1px; left:-1px;
+  width:20px; height:20px;
+  border-top:3px solid var(--cyan); border-left:3px solid var(--cyan);
+  box-shadow: -2px -2px 8px rgba(0,255,255,0.4);
+}
+.panel::after {
+  content:'';
+  position:absolute; bottom:-1px; right:-1px;
+  width:20px; height:20px;
+  border-bottom:3px solid var(--pink); border-right:3px solid var(--pink);
+  box-shadow: 2px 2px 8px rgba(255,0,170,0.4);
+}
+
+.panel:hover {
+  border-color:rgba(0,255,255,0.7);
+  box-shadow: 0 0 20px rgba(0,255,255,0.1), inset 0 0 20px rgba(0,255,255,0.04);
+}
+
+/* Decorative wireframe shape in panels */
+.panel .deco-shape {
+  position:absolute; right:12px; top:12px;
+  opacity:0.12; pointer-events:none;
+}
+
+.ptitle {
+  font-family:'VT323',monospace; font-size:24px; font-weight:400;
+  letter-spacing:4px; color:var(--cyan); text-transform:uppercase;
+  margin-bottom:16px; display:flex; align-items:center; gap:10px;
+  text-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(0,255,255,0.4);
+}
+
+.ptitle .ico { color:var(--pink); text-shadow: 0 0 8px var(--pink); }
+
+/* ── GRIDS ── */
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+
+@media(max-width:1100px) { .g4{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr;} }
+@media(max-width:700px) { .g2,.g3,.g4{grid-template-columns:1fr;} }
+
+/* ── STAT CARD ── */
+.scard {
+  border:1px solid; padding:20px 16px;
+  position:relative; overflow:hidden; text-align:center;
+  transition: box-shadow .3s;
+}
+.scard.cy { border-color:rgba(0,255,255,0.5); background:rgba(0,255,255,0.05); }
+.scard.pk { border-color:rgba(255,0,170,0.5); background:rgba(255,0,170,0.05); }
+.scard.gn { border-color:rgba(0,255,136,0.5); background:rgba(0,255,136,0.05); }
+.scard.vl { border-color:rgba(204,0,255,0.5); background:rgba(204,0,255,0.05); }
+.scard.yw { border-color:rgba(255,238,0,0.5); background:rgba(255,238,0,0.05); }
+.scard::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:3px;
+}
+.scard.cy::after { background:var(--cyan); box-shadow:var(--gc); }
+.scard.pk::after { background:var(--pink); box-shadow:var(--gp); }
+.scard.gn::after { background:var(--green); box-shadow:var(--gg); }
+.scard.vl::after { background:var(--purple); box-shadow:var(--gv); }
+.scard.yw::after { background:var(--yellow); box-shadow:var(--gy); }
+.scard:hover { box-shadow: 0 0 20px currentColor; }
+
+.snum {
+  font-family:'VT323',monospace; font-size:52px; font-weight:400; line-height:1;
+  margin-bottom:6px;
+}
+.scard.cy .snum { color:var(--cyan); text-shadow:var(--gc); }
+.scard.pk .snum { color:var(--pink); text-shadow:var(--gp); }
+.scard.gn .snum { color:var(--green); text-shadow:var(--gg); }
+.scard.vl .snum { color:var(--purple); text-shadow:var(--gv); }
+.scard.yw .snum { color:var(--yellow); text-shadow:var(--gy); }
+.slbl { font-size:11px; color:rgba(255,255,255,0.75); letter-spacing:2px; font-family:'Share Tech Mono',monospace; }
+
+/* ── INPUTS ── */
+input, textarea, select {
+  background:rgba(0,0,20,0.8);
+  border:1px solid rgba(0,255,255,0.35);
+  color:#ffffff;
+  font-family:'Share Tech Mono',monospace; font-size:15px;
+  padding:10px 14px; width:100%; outline:none;
+  transition:border-color .2s, box-shadow .2s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color:var(--cyan);
+  box-shadow:0 0 12px rgba(0,255,255,0.25);
+  background:rgba(0,10,30,0.9);
+}
+input::placeholder, textarea::placeholder { color:rgba(255,255,255,0.4); }
+textarea { resize:vertical; min-height:90px; }
+select option { background:#060614; color:#fff; }
+.lbl { font-size:12px; color:var(--cyan); letter-spacing:2px; margin-bottom:6px; font-family:'Share Tech Mono',monospace; text-shadow: 0 0 6px rgba(0,255,255,0.5); font-weight:700; }
+.field { margin-bottom:14px; }
+
+/* ── BUTTONS ── */
+.btn {
+  font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:2px;
+  padding:10px 22px; border:1px solid; cursor:pointer;
+  background:transparent; text-transform:uppercase; transition:all .2s;
+  font-weight:700;
+}
+.btn-c { color:var(--cyan); border-color:var(--cyan); text-shadow:0 0 6px var(--cyan); }
+.btn-c:hover { background:rgba(0,255,255,0.15); box-shadow:var(--gc); }
+.btn-p { color:var(--pink); border-color:var(--pink); text-shadow:0 0 6px var(--pink); }
+.btn-p:hover { background:rgba(255,0,170,0.15); box-shadow:var(--gp); }
+.btn-g { color:var(--green); border-color:var(--green); text-shadow:0 0 6px var(--green); }
+.btn-g:hover { background:rgba(0,255,136,0.15); box-shadow:var(--gg); }
+.btn-v { color:var(--purple); border-color:var(--purple); text-shadow:0 0 6px var(--purple); }
+.btn-v:hover { background:rgba(204,0,255,0.15); box-shadow:var(--gv); }
+.btn-sm { padding:5px 12px; font-size:10px; }
+.btn-y { color:var(--yellow); border-color:var(--yellow); text-shadow:0 0 6px var(--yellow); }
+.btn-y:hover { background:rgba(255,238,0,0.15); box-shadow:var(--gy); }
+
+/* ── TAGS ── */
+.tag {
+  display:inline-block; font-size:10px; padding:3px 10px;
+  border:1px solid; letter-spacing:1px; font-family:'Share Tech Mono',monospace;
+  margin:2px;
+}
+.tc { color:var(--cyan); border-color:rgba(0,255,255,0.5); text-shadow:0 0 4px var(--cyan); }
+.tp { color:var(--pink); border-color:rgba(255,0,170,0.5); text-shadow:0 0 4px var(--pink); }
+.tg { color:var(--green); border-color:rgba(0,255,136,0.5); text-shadow:0 0 4px var(--green); }
+.tv { color:var(--purple); border-color:rgba(204,0,255,0.5); }
+.ty { color:var(--yellow); border-color:rgba(255,238,0,0.5); }
+
+/* ── ITEMS ── */
+.item {
+  border:1px solid rgba(0,255,255,0.28); padding:14px 16px;
+  margin-bottom:8px; position:relative; transition:all .2s;
+  background:rgba(0,255,255,0.02);
+}
+.item:hover { border-color:rgba(0,255,255,0.6); background:rgba(0,255,255,0.05); }
+
+.item-title { font-family:'VT323',monospace; font-size:20px; color:var(--cyan); margin-bottom:5px; text-shadow:0 0 8px var(--cyan); }
+.item-meta { font-size:13px; color:rgba(255,255,255,0.7); font-family:'Share Tech Mono',monospace; margin-bottom:6px; }
+.item-body { font-size:14px; color:#ffffff; line-height:1.7; }
+
+.item-actions { position:absolute; top:10px; right:10px; display:flex; gap:6px; }
+
+.delbtn {
+  background:transparent; border:none; color:rgba(255,0,170,0.6);
+  cursor:pointer; font-size:18px; padding:0 4px; transition:color .2s; line-height:1;
+}
+.delbtn:hover { color:var(--pink); text-shadow:var(--gp); }
+
+/* ── PROGRESS BAR ── */
+.xpwrap { height:8px; background:rgba(255,255,255,0.07); border:1px solid rgba(0,255,255,0.2); overflow:hidden; margin:6px 0; }
+.xpfill { height:100%; transition:width .8s ease; }
+.xp-c { background:linear-gradient(90deg,var(--purple),var(--cyan)); box-shadow:var(--gc); }
+.xp-p { background:linear-gradient(90deg,var(--pink),var(--purple)); box-shadow:var(--gp); }
+.xp-g { background:linear-gradient(90deg,var(--green),var(--cyan)); box-shadow:var(--gg); }
+
+/* ── MOTIVATIONAL ── */
+.motive {
+  border:2px solid rgba(255,0,170,0.6);
+  background:rgba(255,0,170,0.07);
+  padding:20px 24px; text-align:center;
+  font-family:'VT323',monospace; font-size:28px;
+  color:var(--pink); text-shadow:var(--gp); letter-spacing:3px;
+  animation:flicker 5s infinite;
+  box-shadow: 0 0 30px rgba(255,0,170,0.15), inset 0 0 30px rgba(255,0,170,0.05);
+}
+@keyframes flicker {
+  0%,94%,100%{opacity:1} 95%{opacity:.3} 96%{opacity:1} 97%{opacity:.5} 98%{opacity:1}
+}
+
+/* ── GLITCH ── */
+@keyframes glitch-text {
+  0%,88%,100%{text-shadow: 0 0 10px #00ffff, 0 0 25px #00ffff, 0 0 60px rgba(0,255,255,0.6)}
+  89%{text-shadow:-3px 0 var(--pink), 3px 0 var(--green), 0 0 20px var(--cyan)}
+  91%{text-shadow:3px 0 var(--pink),-3px 0 var(--green), 0 0 20px var(--cyan)}
+  93%{text-shadow: 0 0 10px #00ffff, 0 0 25px #00ffff}
+}
+
+/* ── HABIT ITEM ── */
+.habit-row {
+  display:flex; align-items:center; gap:14px;
+  border:1px solid rgba(0,255,136,0.25); padding:12px 16px; margin-bottom:7px;
+  transition:all .2s; background:rgba(0,255,136,0.02);
+}
+.habit-row.done { border-color:rgba(0,255,136,0.5); background:rgba(0,255,136,0.06); }
+.hcheck {
+  width:24px; height:24px; border:2px solid var(--green);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:14px; color:var(--green); text-shadow:var(--gg);
+  flex-shrink:0; transition:all .2s;
+}
+.hcheck:hover { box-shadow:var(--gg); background:rgba(0,255,136,0.1); }
+.hname { flex:1; font-size:16px; font-weight:700; color:#ffffff; font-family:'Share Tech Mono',monospace; }
+.habit-row.done .hname { text-decoration:line-through; color:rgba(255,255,255,0.4); }
+.sdots { display:flex; gap:4px; margin-top:5px; }
+.sdot { width:9px; height:9px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); }
+.sdot.on { background:var(--green); box-shadow:0 0 6px var(--green); }
+
+/* ── TASK ITEM ── */
+.task-row {
+  display:flex; align-items:flex-start; gap:12px;
+  border:1px solid rgba(0,255,255,0.22); padding:12px 14px; margin-bottom:6px; transition:all .2s;
+  background:rgba(0,0,20,0.5);
+}
+.task-row:hover { border-color:rgba(0,255,255,0.5); }
+.task-row.done { opacity:.45; }
+.task-row.done .ttext { text-decoration:line-through; }
+.tcheck {
+  width:20px; height:20px; border:2px solid var(--cyan); flex-shrink:0;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:12px; color:var(--cyan); margin-top:1px; transition:all .2s;
+}
+.tcheck:hover { box-shadow:var(--gc); background:rgba(0,255,255,0.1); }
+.ttext { flex:1; font-size:15px; font-weight:700; color:#ffffff; }
+
+.badge {
+  font-size:8px; padding:2px 7px; border:1px solid; font-family:'Share Tech Mono',monospace;
+  letter-spacing:1px; flex-shrink:0;
+}
+.bH { color:var(--pink); border-color:rgba(255,45,120,.4); }
+.bM { color:var(--yellow); border-color:rgba(255,230,0,.3); }
+.bL { color:var(--dim); border-color:rgba(255,255,255,.1); }
+
+@keyframes spin3d { from{transform:rotateY(0deg) rotateX(15deg)} to{transform:rotateY(360deg) rotateX(15deg)} }
+
+/* ── JOURNAL ── */
+.jlayout { display:grid; grid-template-columns:280px 1fr; gap:18px; }
+@media(max-width:900px) { .jlayout { grid-template-columns:1fr; } }
+
+.jlist { max-height:550px; overflow-y:auto; }
+.jentry {
+  border:1px solid rgba(255,0,170,0.3); padding:11px 13px; margin-bottom:5px;
+  cursor:pointer; transition:all .2s; background:rgba(255,0,170,0.03);
+}
+.jentry:hover, .jentry.sel { border-color:var(--pink); background:rgba(255,0,170,0.08); box-shadow: 0 0 10px rgba(255,0,170,0.2); }
+.jdate { font-size:10px; color:rgba(255,255,255,0.7); font-family:'Share Tech Mono',monospace; }
+.jprev { font-size:13px; color:#ffffff; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.ai-box {
+  background:rgba(204,0,255,0.07); border:1px solid rgba(204,0,255,0.5);
+  border-left:4px solid var(--purple); padding:16px;
+  font-size:14px; color:#e0ccff; min-height:80px;
+  white-space:pre-wrap; line-height:1.8; font-family:'Share Tech Mono',monospace;
+}
+.ai-lbl { font-size:10px; color:var(--purple); letter-spacing:3px; margin-bottom:8px; font-family:'Share Tech Mono',monospace; text-shadow:0 0 8px var(--purple); }
+
+/* ── HYPOTHESIS ── */
+.hyp-status {
+  display:inline-block; font-size:10px; padding:3px 12px; border:1px solid;
+  font-family:'Share Tech Mono',monospace; letter-spacing:2px;
+}
+.hs-promising { color:var(--green); border-color:rgba(0,255,136,.6); text-shadow:0 0 6px var(--green); }
+.hs-testing   { color:var(--yellow); border-color:rgba(255,238,0,.5); text-shadow:0 0 6px var(--yellow); }
+.hs-dead      { color:rgba(255,80,80,.7); border-color:rgba(255,80,80,.3); text-decoration:line-through; }
+.hs-idea      { color:var(--cyan); border-color:rgba(0,255,255,.5); text-shadow:0 0 6px var(--cyan); }
+
+/* ── FAILURE VAULT ── */
+.fail-item {
+  border:1px solid rgba(255,0,170,0.35); padding:16px;
+  margin-bottom:10px; background:rgba(255,0,170,0.04); position:relative;
+  transition:all .2s;
+}
+.fail-item:hover { border-color:rgba(255,0,170,0.7); box-shadow:0 0 15px rgba(255,0,170,0.1); }
+.fail-title { font-family:'VT323',monospace; font-size:22px; color:var(--pink); margin-bottom:6px; text-shadow:0 0 8px var(--pink); }
+
+/* ── CONCEPT GRAPH ── */
+#concept-canvas { width:100%; height:420px; border:1px solid var(--border); cursor:grab; }
+#concept-canvas:active { cursor:grabbing; }
+
+/* ── ADVISOR ── */
+.meeting-item {
+  border:1px solid var(--border); padding:14px 16px; margin-bottom:8px; transition:all .2s;
+}
+.meeting-item:hover { border-color:rgba(157,0,255,0.3); }
+.meet-title { font-family:'Orbitron',sans-serif; font-size:11px; color:var(--purple); margin-bottom:5px; }
+
+/* ── WHY PANEL ── */
+.why-panel {
+  border:1px solid rgba(255,230,0,0.3);
+  background:rgba(255,230,0,0.03);
+  padding:28px; text-align:center; position:relative;
+}
+.why-panel::before, .why-panel::after {
+  border-color:var(--yellow) !important;
+}
+.why-big {
+  font-family:'VT323',monospace; font-size:52px;
+  color:var(--yellow); text-shadow:0 0 20px var(--yellow), 0 0 40px var(--yellow);
+  line-height:1.1; margin-bottom:12px;
+  animation:flicker 4s infinite;
+}
+
+/* ── WARNING ── */
+.warn {
+  border:1px solid rgba(255,45,120,0.4); padding:12px 16px;
+  background:rgba(255,45,120,0.04); font-family:'VT323',monospace;
+  font-size:20px; color:var(--pink); text-shadow:var(--gp); margin-bottom:8px;
+  animation:flicker 6s infinite;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--cyan); box-shadow:var(--gc); }
+
+/* ── EMPTY STATE ── */
+.empty { text-align:center; padding:36px; color:var(--dim); font-size:12px; letter-spacing:2px; font-family:'Share Tech Mono',monospace; }
+
+/* ── FORM ROWS ── */
+.frow { display:flex; gap:10px; align-items:flex-end; }
+.frow > * { flex:1; }
+.frow .btn { flex:0; white-space:nowrap; }
+
+/* ── SCROLL LIST ── */
+.slist { max-height:380px; overflow-y:auto; }
+
+/* ── TIMELINE ── */
+.timeline { position:relative; padding-left:30px; }
+.timeline::before {
+  content:''; position:absolute; left:8px; top:0; bottom:0; width:2px;
+  background:linear-gradient(to bottom, var(--cyan), var(--purple), var(--pink));
+}
+.tl-item { position:relative; margin-bottom:18px; }
+.tl-dot {
+  position:absolute; left:-26px; top:4px; width:14px; height:14px;
+  border-radius:50%; border:2px solid; background:var(--bg);
+}
+.tl-dot.cy { border-color:var(--cyan); box-shadow:var(--gc); }
+.tl-dot.pk { border-color:var(--pink); box-shadow:var(--gp); }
+.tl-dot.gn { border-color:var(--green); box-shadow:var(--gg); }
+.tl-dot.vl { border-color:var(--purple); box-shadow:var(--gv); }
+
+.tl-card { border:1px solid rgba(0,255,255,0.25); padding:12px 14px; background:rgba(0,255,255,0.03); }
+.tl-date { font-size:10px; color:rgba(255,255,255,0.65); font-family:'Share Tech Mono',monospace; margin-bottom:5px; }
+.tl-title { font-family:'VT323',monospace; font-size:18px; color:var(--cyan); margin-bottom:4px; text-shadow:0 0 6px var(--cyan); }
+.tl-body { font-size:13px; color:rgba(255,255,255,0.8); }
+
+/* ── API OVERLAY ── */
+#api-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.92); z-index:2000;
+  align-items:center; justify-content:center;
+}
+.api-box {
+  border:2px solid var(--cyan); box-shadow:var(--gc);
+  background:rgba(2,2,20,0.98); padding:32px; max-width:460px; width:90%;
+}
+.api-box h2 {
+  font-family:'VT323',monospace; color:var(--cyan); font-size:28px;
+  letter-spacing:4px; margin-bottom:12px; text-shadow:var(--gc);
+}
+.api-box p { font-size:13px; color:rgba(255,255,255,0.75); margin-bottom:16px; line-height:1.7; font-family:'Share Tech Mono',monospace; }
+
+/* ── STREAK ── */
+.streak-num {
+  font-family:'VT323',monospace; font-size:80px;
+  color:var(--yellow); text-align:center;
+  text-shadow:var(--gy);
+  animation:flicker 3s infinite;
+}
+
+/* ── SEP ── */
+.sep { border:none; border-top:1px solid rgba(0,255,255,0.2); margin:16px 0; }
+
+/* PAPER INSIGHT FIELDS */
+.insight-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+@media(max-width:600px){ .insight-grid{grid-template-columns:1fr;} }
+
+/* Typing cursor */
+.cursor::after { content:'▌'; animation:blink .7s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Link badge */
+.link-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; padding:3px 10px; border:1px solid rgba(0,255,255,.45);
+  color:var(--cyan); font-family:'Share Tech Mono',monospace; margin:2px; cursor:default;
+  text-shadow:0 0 4px var(--cyan);
+}
+
+/* ── OPERATIVE NAME TAG ── */
+.operative-tag {
+  display:flex; align-items:center; gap:8px;
+  border:1px solid var(--pink);
+  padding:6px 14px;
+  cursor:pointer;
+  transition:all .3s;
+  background:rgba(255,0,170,0.06);
+  box-shadow: 0 0 10px rgba(255,0,170,0.15);
+}
+.operative-tag:hover {
+  background:rgba(255,0,170,0.14);
+  box-shadow: 0 0 20px rgba(255,0,170,0.3);
+}
+.operative-prefix {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  color:rgba(255,255,255,0.55); letter-spacing:2px;
+}
+.operative-name {
+  font-family:'VT323',monospace; font-size:20px;
+  color:var(--pink); text-shadow:var(--gp); letter-spacing:2px;
+}
+.operative-edit {
+  font-size:12px; color:rgba(255,0,170,0.6);
+}
+
+/* ── SETTINGS MODAL ── */
+#settings-modal {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.92); z-index:3000;
+  align-items:center; justify-content:center;
+}
+.settings-box {
+  border:2px solid var(--pink); box-shadow:var(--gp);
+  background:rgba(2,2,20,0.98); padding:36px;
+  max-width:500px; width:92%; position:relative;
+}
+.settings-box::before {
+  content:''; position:absolute; top:-1px; left:-1px;
+  width:24px; height:24px;
+  border-top:3px solid var(--cyan); border-left:3px solid var(--cyan);
+}
+.settings-box::after {
+  content:''; position:absolute; bottom:-1px; right:-1px;
+  width:24px; height:24px;
+  border-bottom:3px solid var(--pink); border-right:3px solid var(--pink);
+}
+.settings-title {
+  font-family:'VT323',monospace; font-size:32px;
+  color:var(--pink); text-shadow:var(--gp); letter-spacing:4px; margin-bottom:6px;
+}
+.settings-sub {
+  font-family:'Share Tech Mono',monospace; font-size:11px;
+  color:rgba(255,255,255,0.5); letter-spacing:2px; margin-bottom:28px;
+}
+.settings-preview {
+  border:1px solid rgba(255,0,170,0.3); padding:16px;
+  background:rgba(255,0,170,0.04); margin-bottom:20px; text-align:center;
+}
+.settings-preview-label {
+  font-size:10px; color:rgba(255,255,255,0.45); letter-spacing:2px;
+  font-family:'Share Tech Mono',monospace; margin-bottom:6px;
+}
+.settings-preview-name {
+  font-family:'VT323',monospace; font-size:36px;
+  color:var(--pink); text-shadow:var(--gp); letter-spacing:3px;
+}
+.warn {
+  border:1px solid rgba(255,0,170,0.6); padding:14px 18px;
+  background:rgba(255,0,170,0.08); font-family:'VT323',monospace;
+  font-size:22px; color:var(--pink); text-shadow:var(--gp); margin-bottom:10px;
+  animation:flicker 6s infinite; letter-spacing:2px;
+}
+.why-panel {
+  border:2px solid rgba(255,238,0,0.5); background:rgba(255,238,0,0.05);
+  padding:32px; text-align:center; position:relative;
+  box-shadow: 0 0 40px rgba(255,238,0,0.1);
+}
+.why-big {
+  font-family:'VT323',monospace; font-size:56px;
+  color:var(--yellow); text-shadow:var(--gy);
+  line-height:1.1; margin-bottom:12px; animation:flicker 4s infinite;
+}
+
+/* ── EMPTY STATE ── */
+.empty { text-align:center; padding:36px; color:rgba(255,255,255,0.45); font-size:12px; letter-spacing:2px; font-family:'Share Tech Mono',monospace; }
+
+/* ── FORM ROWS ── */
+.frow { display:flex; gap:10px; align-items:flex-end; }
+.frow > * { flex:1; }
+.frow .btn { flex:0; white-space:nowrap; }
+
+/* ── SCROLL LIST ── */
+.slist { max-height:380px; overflow-y:auto; }
+
+/* ── ADVISOR MEETING ── */
+.meeting-item { border:1px solid rgba(204,0,255,0.3); padding:15px; margin-bottom:10px; background:rgba(204,0,255,0.03); transition:all .2s; }
+.meeting-item:hover { border-color:rgba(204,0,255,0.6); }
+.meet-title { font-family:'VT323',monospace; font-size:20px; color:var(--purple); margin-bottom:6px; text-shadow:0 0 8px var(--purple); }
+
+/* ── CONCEPT CANVAS ── */
+#concept-canvas { width:100%; height:420px; border:1px solid rgba(0,255,255,0.35); cursor:grab; background:rgba(0,0,10,0.8); }
+#concept-canvas:active { cursor:grabbing; }
+
+/* ── BADGE ── */
+.badge {
+  font-size:9px; padding:3px 8px; border:1px solid; font-family:'Share Tech Mono',monospace;
+  letter-spacing:1px; flex-shrink:0;
+}
+.bH { color:var(--pink); border-color:rgba(255,0,170,.6); text-shadow:0 0 4px var(--pink); }
+.bM { color:var(--yellow); border-color:rgba(255,238,0,.5); }
+.bL { color:rgba(255,255,255,0.5); border-color:rgba(255,255,255,.2); }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="grid-floor"></div>
+
+<!-- CYBERPUNK CITY SILHOUETTE -->
+<svg id="city-svg" style="position:fixed;bottom:0;left:0;width:100%;height:35vh;z-index:0;opacity:0.18;pointer-events:none;" viewBox="0 0 1400 300" preserveAspectRatio="xMidYMax meet">
+  <defs>
+    <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff00aa"/>
+      <stop offset="100%" stop-color="#00ffff"/>
+    </linearGradient>
+  </defs>
+  <!-- Buildings -->
+  <rect x="0" y="120" width="60" height="180" fill="url(#cg)"/>
+  <rect x="20" y="80" width="20" height="220" fill="url(#cg)"/>
+  <rect x="65" y="60" width="80" height="240" fill="url(#cg)"/>
+  <rect x="90" y="30" width="30" height="270" fill="url(#cg)"/>
+  <rect x="150" y="100" width="50" height="200" fill="url(#cg)"/>
+  <rect x="210" y="50" width="70" height="250" fill="url(#cg)"/>
+  <rect x="240" y="20" width="20" height="280" fill="url(#cg)"/>
+  <rect x="290" y="90" width="60" height="210" fill="url(#cg)"/>
+  <rect x="360" y="40" width="90" height="260" fill="url(#cg)"/>
+  <rect x="390" y="10" width="25" height="290" fill="url(#cg)"/>
+  <rect x="460" y="70" width="55" height="230" fill="url(#cg)"/>
+  <rect x="525" y="110" width="45" height="190" fill="url(#cg)"/>
+  <rect x="580" y="30" width="75" height="270" fill="url(#cg)"/>
+  <rect x="610" y="0" width="20" height="300" fill="url(#cg)"/>
+  <rect x="665" y="85" width="55" height="215" fill="url(#cg)"/>
+  <rect x="730" y="55" width="65" height="245" fill="url(#cg)"/>
+  <rect x="760" y="20" width="25" height="280" fill="url(#cg)"/>
+  <rect x="805" y="95" width="50" height="205" fill="url(#cg)"/>
+  <rect x="865" y="45" width="80" height="255" fill="url(#cg)"/>
+  <rect x="900" y="15" width="25" height="285" fill="url(#cg)"/>
+  <rect x="955" y="75" width="55" height="225" fill="url(#cg)"/>
+  <rect x="1020" y="35" width="70" height="265" fill="url(#cg)"/>
+  <rect x="1100" y="80" width="60" height="220" fill="url(#cg)"/>
+  <rect x="1120" y="40" width="20" height="260" fill="url(#cg)"/>
+  <rect x="1170" y="60" width="80" height="240" fill="url(#cg)"/>
+  <rect x="1200" y="25" width="30" height="275" fill="url(#cg)"/>
+  <rect x="1260" y="90" width="55" height="210" fill="url(#cg)"/>
+  <rect x="1325" y="50" width="75" height="250" fill="url(#cg)"/>
+  <!-- Window lights -->
+  <g fill="var(--cyan)" opacity="0.7">
+    <rect x="25" y="90" width="6" height="4"/><rect x="35" y="105" width="6" height="4"/>
+    <rect x="70" y="70" width="6" height="4"/><rect x="85" y="85" width="6" height="4"/>
+    <rect x="215" y="60" width="6" height="4"/><rect x="230" y="80" width="6" height="4"/>
+    <rect x="365" y="50" width="6" height="4"/><rect x="385" y="70" width="6" height="4"/>
+    <rect x="585" y="45" width="6" height="4"/><rect x="615" y="15" width="6" height="4"/>
+  </g>
+  <g fill="var(--pink)" opacity="0.6">
+    <rect x="155" y="115" width="6" height="4"/><rect x="170" y="130" width="6" height="4"/>
+    <rect x="295" y="100" width="6" height="4"/><rect x="312" y="120" width="6" height="4"/>
+    <rect x="467" y="80" width="6" height="4"/><rect x="485" y="95" width="6" height="4"/>
+    <rect x="735" y="65" width="6" height="4"/><rect x="762" y="35" width="6" height="4"/>
+  </g>
+</svg>
+
+<!-- FLOATING WIREFRAME SHAPES -->
+<svg style="position:fixed;top:15%;right:3%;width:120px;height:120px;z-index:0;opacity:0.22;pointer-events:none;animation:spin3d 18s linear infinite;" viewBox="0 0 100 100">
+  <ellipse cx="50" cy="50" rx="45" ry="18" fill="none" stroke="#ff00aa" stroke-width="1.5"/>
+  <ellipse cx="50" cy="50" rx="45" ry="45" fill="none" stroke="#00ffff" stroke-width="1"/>
+  <ellipse cx="50" cy="50" rx="18" ry="45" fill="none" stroke="#cc00ff" stroke-width="1"/>
+  <line x1="5" y1="50" x2="95" y2="50" stroke="#00ffff" stroke-width="0.5"/>
+  <line x1="50" y1="5" x2="50" y2="95" stroke="#ff00aa" stroke-width="0.5"/>
+</svg>
+<svg style="position:fixed;top:60%;left:2%;width:90px;height:90px;z-index:0;opacity:0.18;pointer-events:none;animation:spin3d 24s linear infinite reverse;" viewBox="0 0 100 100">
+  <polygon points="50,5 95,75 5,75" fill="none" stroke="#00ffff" stroke-width="2"/>
+  <polygon points="50,15 85,70 15,70" fill="none" stroke="#ff00aa" stroke-width="1"/>
+  <polygon points="50,25 75,65 25,65" fill="none" stroke="#cc00ff" stroke-width="1"/>
+</svg>
+<svg style="position:fixed;bottom:20%;right:5%;width:100px;height:100px;z-index:0;opacity:0.2;pointer-events:none;animation:spin3d 20s linear infinite;" viewBox="0 0 100 100">
+  <rect x="20" y="20" width="60" height="60" fill="none" stroke="#00ffff" stroke-width="1.5" transform="rotate(0 50 50)"/>
+  <rect x="20" y="20" width="60" height="60" fill="none" stroke="#ff00aa" stroke-width="1" transform="rotate(20 50 50)"/>
+  <rect x="20" y="20" width="60" height="60" fill="none" stroke="#cc00ff" stroke-width="0.8" transform="rotate(40 50 50)"/>
+  <rect x="20" y="20" width="60" height="60" fill="none" stroke="#00ff88" stroke-width="0.6" transform="rotate(60 50 50)"/>
+</svg>
+@keyframes spin3d { from{transform:rotateY(0deg) rotateX(15deg)} to{transform:rotateY(360deg) rotateX(15deg)} }
+
+<!-- BOOT -->
+<div id="boot">
+  <div class="boot-ascii">CORTEX</div>
+  <div class="boot-sub">RESEARCH INTELLIGENCE OPERATING SYSTEM · v3.0</div>
+</div>
+
+<!-- API OVERLAY -->
+<div id="api-overlay" style="display:none;">
+  <div class="api-box">
+    <h2>// NEURAL LINK</h2>
+    <p>Connect your Anthropic API key to enable the AI journal companion. Your key is stored only in your local browser — never sent anywhere else.</p>
+    <div class="field">
+      <div class="lbl">ANTHROPIC API KEY</div>
+      <input type="text" id="api-key-input" placeholder="sk-ant-api03-...">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-c" onclick="saveApiKey()">// CONNECT</button>
+      <button class="btn btn-g" onclick="closeApi()">// SKIP</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:3000; align-items:center; justify-content:center;">
+  <div class="settings-box">
+    <div class="settings-title">// OPERATIVE CONFIG</div>
+    <div class="settings-sub">PERSONALIZE YOUR CORTEX OS INSTANCE</div>
+
+    <div class="settings-preview">
+      <div class="settings-preview-label">NAME TAG PREVIEW</div>
+      <div class="settings-preview-name" id="name-preview">YOUR NAME</div>
+    </div>
+
+    <div class="field">
+      <div class="lbl">YOUR NAME / CODENAME</div>
+      <input type="text" id="settings-name" placeholder="e.g. Dr. Priya · GHOST · AXIOM ..." maxlength="28" oninput="document.getElementById('name-preview').textContent=this.value||'YOUR NAME'">
+    </div>
+    <div class="field">
+      <div class="lbl">YOUR FIELD / TITLE (shown on boot)</div>
+      <input type="text" id="settings-field" placeholder="e.g. PhD Candidate · Neuroscience · IIT Delhi" maxlength="60">
+    </div>
+    <div class="field">
+      <div class="lbl">YOUR INSTITUTION</div>
+      <input type="text" id="settings-institution" placeholder="e.g. IIT Bombay · IISC · Harvard..." maxlength="50">
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+      <button class="btn btn-p" onclick="saveSettings()">// SAVE IDENTITY</button>
+      <button class="btn btn-c" onclick="closeSettings()">// CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo-wrap">
+      <div class="logo">CORTEX <em>//</em> OS</div>
+      <div class="logo-tag">PhD RESEARCH INTELLIGENCE</div>
+    </div>
+    <div class="topbar-right">
+      <div class="operative-tag" id="operative-tag" onclick="openSettings()">
+        <span class="operative-prefix">OPERATIVE //</span>
+        <span class="operative-name" id="operative-name-display">SET YOUR NAME</span>
+        <span class="operative-edit">✎</span>
+      </div>
+      <div class="status-pill"><div class="pulse"></div>SYSTEM ONLINE</div>
+      <div class="clock-wrap" id="clk">00:00:00</div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav">
+    <button class="ntab active" onclick="go('dash',this)">▸ DASHBOARD</button>
+    <button class="ntab" onclick="go('archive',this)">▸ ARCHIVE</button>
+    <button class="ntab" onclick="go('journal',this)">▸ NEURAL LOG</button>
+    <button class="ntab" onclick="go('hypo',this)">▸ HYPOTHESIS</button>
+    <button class="ntab" onclick="go('fail',this)">▸ FAILURE VAULT</button>
+    <button class="ntab" onclick="go('habits',this)">▸ PROTOCOLS</button>
+    <button class="ntab" onclick="go('tasks',this)">▸ TASK QUEUE</button>
+    <button class="ntab" onclick="go('advisor',this)">▸ ADVISOR SYNC</button>
+    <button class="ntab" onclick="go('graph',this)">▸ CONCEPT GRAPH</button>
+    <button class="ntab" onclick="go('why',this)">▸ WHY</button>
+    <button class="ntab" onclick="go('core',this)">▸ CORE</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════ DASHBOARD ═══════════════ -->
+    <div class="module active" id="mod-dash">
+      <div class="g4" id="dash-stats" style="margin-bottom:18px;"></div>
+      <div class="motive" id="dash-motive"></div>
+      <hr class="sep">
+      <div class="g2">
+        <div>
+          <div class="panel">
+            <div class="ptitle"><span class="ico">⚡</span>TODAY'S PROTOCOLS</div>
+            <div id="dash-habits"></div>
+          </div>
+          <div class="panel">
+            <div class="ptitle"><span class="ico">▶</span>URGENT TASKS</div>
+            <div id="dash-tasks"></div>
+          </div>
+        </div>
+        <div>
+          <div class="panel">
+            <div class="ptitle"><span class="ico">🧪</span>ACTIVE HYPOTHESES</div>
+            <div id="dash-hypo"></div>
+          </div>
+          <div class="panel">
+            <div class="ptitle"><span class="ico">📡</span>RECENT TRANSMISSIONS</div>
+            <div id="dash-journal"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ ARCHIVE ═══════════════ -->
+    <div class="module" id="mod-archive">
+      <div class="panel">
+        <div class="ptitle"><span class="ico">📥</span>ADD TO ARCHIVE — PAPER-TO-INSIGHT PIPELINE</div>
+        <div class="insight-grid">
+          <div class="field"><div class="lbl">PAPER TITLE</div><input id="pt" placeholder="Full paper title..."></div>
+          <div class="field"><div class="lbl">AUTHORS</div><input id="pa" placeholder="Author et al., 2024"></div>
+          <div class="field"><div class="lbl">JOURNAL / VENUE</div><input id="pj" placeholder="Nature, NeurIPS, etc."></div>
+          <div class="field"><div class="lbl">YEAR</div><input id="py" placeholder="2024"></div>
+        </div>
+        <div class="field"><div class="lbl">TAGS (comma separated)</div><input id="ptg" placeholder="deep learning, transformer, attention..."></div>
+        <div class="insight-grid">
+          <div class="field"><div class="lbl">3-LINE SUMMARY ★</div><textarea id="ps" placeholder="Force yourself: what does this paper actually say in 3 lines?" style="min-height:70px;"></textarea></div>
+          <div class="field"><div class="lbl">KEY IDEA ★</div><textarea id="pk" placeholder="The single most important idea..." style="min-height:70px;"></textarea></div>
+          <div class="field"><div class="lbl">HOW IT AFFECTS YOUR WORK ★</div><textarea id="paw" placeholder="Why does this matter to YOUR research?" style="min-height:70px;"></textarea></div>
+          <div class="field"><div class="lbl">POTENTIAL EXPERIMENT IDEAS ★</div><textarea id="pex" placeholder="What experiments could this inspire?" style="min-height:70px;"></textarea></div>
+        </div>
+        <div class="field"><div class="lbl">LINK TO HYPOTHESIS (ID or name)</div><input id="plink" placeholder="Optional: connect to a hypothesis..."></div>
+        <button class="btn btn-c" onclick="addPaper()">// UPLOAD TO ARCHIVE</button>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle"><span class="ico">🔍</span>SEARCH ARCHIVE</div>
+        <input id="psearch" placeholder="Search titles, authors, tags, ideas..." oninput="renderPapers()">
+      </div>
+
+      <div class="panel">
+        <div class="ptitle"><span class="ico">📚</span>ARCHIVED PAPERS (<span id="paper-count">0</span>)</div>
+        <div id="papers-list" class="slist"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ JOURNAL ═══════════════ -->
+    <div class="module" id="mod-journal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:12px;color:var(--pink);text-shadow:var(--gp);letter-spacing:3px;">// NEURAL LOG — ENCRYPTED THOUGHT STREAM</div>
+        <button class="btn btn-p btn-sm" onclick="document.getElementById('api-overlay').style.display='flex'">// CONFIG AI</button>
+      </div>
+      <div class="jlayout">
+        <div class="panel" style="padding:14px;">
+          <div class="ptitle">ENTRIES</div>
+          <div class="jlist" id="jlist"></div>
+        </div>
+        <div class="panel">
+          <div class="ptitle"><span class="ico">✍</span>NEW TRANSMISSION</div>
+          <div class="g2">
+            <div class="field"><div class="lbl">MOOD SIGNATURE</div>
+              <select id="jmood">
+                <option value="NOMINAL">NOMINAL — Stable</option>
+                <option value="ELEVATED">ELEVATED — Energized</option>
+                <option value="OPTIMIZED">OPTIMIZED — Focused</option>
+                <option value="DEGRADED">DEGRADED — Low power</option>
+                <option value="CRITICAL">CRITICAL — Overwhelmed</option>
+                <option value="GLITCHING">GLITCHING — Anxious</option>
+                <option value="REBOOTING">REBOOTING — Recharging</option>
+              </select>
+            </div>
+            <div class="field"><div class="lbl">ENERGY LEVEL (1-10)</div>
+              <input type="number" id="jenergy" min="1" max="10" placeholder="7">
+            </div>
+          </div>
+          <div class="field"><div class="lbl">TRANSMISSION</div>
+            <textarea id="jtext" placeholder="What's on your mind, operative?..." style="min-height:130px;"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-p" onclick="saveJournal()">// SAVE ENTRY</button>
+            <button class="btn btn-v" onclick="aiJournal()">// CONSULT CORTEX AI</button>
+          </div>
+          <div id="ai-area" style="display:none;margin-top:14px;">
+            <div class="ai-lbl">▸ CORTEX AI RESPONSE</div>
+            <div class="ai-box" id="ai-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ HYPOTHESIS ENGINE ═══════════════ -->
+    <div class="module" id="mod-hypo">
+      <div class="panel">
+        <div class="ptitle"><span class="ico">🧪</span>NEW HYPOTHESIS</div>
+        <div class="g2">
+          <div class="field"><div class="lbl">HYPOTHESIS STATEMENT</div>
+            <textarea id="ht" placeholder="State your hypothesis clearly..." style="min-height:70px;"></textarea>
+          </div>
+          <div>
+            <div class="field"><div class="lbl">ORIGIN / INSPIRATION</div>
+              <input id="ho" placeholder="What sparked this idea?">
+            </div>
+            <div class="field"><div class="lbl">STATUS</div>
+              <select id="hs">
+                <option value="idea">IDEA — Just conceived</option>
+                <option value="promising">PROMISING — Gaining evidence</option>
+                <option value="testing">TESTING — Active experiments</option>
+                <option value="dead">DEAD — Disproven / abandoned</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field"><div class="lbl">LINKED EXPERIMENTS / PROTOCOLS</div>
+            <input id="hexp" placeholder="Experiment names, IDs...">
+          </div>
+          <div class="field"><div class="lbl">TAGS</div>
+            <input id="htg" placeholder="methodology, subject area...">
+          </div>
+        </div>
+        <div class="field"><div class="lbl">NOTES</div>
+          <textarea id="hn" placeholder="Any supporting notes, early data, references..."></textarea>
+        </div>
+        <button class="btn btn-g" onclick="addHypo()">// INITIALIZE HYPOTHESIS</button>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle"><span class="ico">🔬</span>HYPOTHESIS TRACKER</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;" id="hypo-filters">
+          <button class="btn btn-c btn-sm" onclick="filterHypo('all')">ALL</button>
+          <button class="btn btn-g btn-sm" onclick="filterHypo('promising')">PROMISING</button>
+          <button class="btn btn-y btn-sm" onclick="filterHypo('testing')">TESTING</button>
+          <button class="btn btn-c btn-sm" onclick="filterHypo('idea')">IDEAS</button>
+          <button class="btn btn-p btn-sm" onclick="filterHypo('dead')">DEAD</button>
+        </div>
+        <div id="hypo-list" class="slist"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ FAILURE VAULT ═══════════════ -->
+    <div class="module" id="mod-fail">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'VT323',monospace;font-size:28px;color:var(--pink);text-shadow:var(--gp);letter-spacing:3px;">⚠ FAILURE VAULT — YOUR ANTI-PLAYBOOK</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;">Every failure logged here is future wisdom. The vault grows stronger with every setback.</div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">💀</span>LOG A FAILURE</div>
+        <div class="g2">
+          <div class="field"><div class="lbl">EXPERIMENT / ATTEMPT TITLE</div>
+            <input id="ft" placeholder="What did you try?">
+          </div>
+          <div class="field"><div class="lbl">DATE OF FAILURE</div>
+            <input type="date" id="fd">
+          </div>
+        </div>
+        <div class="field"><div class="lbl">WHAT WENT WRONG</div>
+          <textarea id="fw" placeholder="Describe exactly what failed and how..."></textarea>
+        </div>
+        <div class="field"><div class="lbl">ROOT CAUSE ANALYSIS</div>
+          <textarea id="frc" placeholder="Why did it fail? Be brutal and honest..."></textarea>
+        </div>
+        <div class="field"><div class="lbl">LESSONS LEARNED ★</div>
+          <textarea id="fl" placeholder="What will you never do the same way again?"></textarea>
+        </div>
+        <div class="g2">
+          <div class="field"><div class="lbl">TAGS (technique / reagent / method)</div>
+            <input id="ftg" placeholder="PCR, overnight culture, ML model, etc.">
+          </div>
+          <div class="field"><div class="lbl">LINKED HYPOTHESIS</div>
+            <input id="fh" placeholder="Which hypothesis did this affect?">
+          </div>
+        </div>
+        <button class="btn btn-p" onclick="addFail()">// VAULT THIS FAILURE</button>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle"><span class="ico">🗄</span>FAILURE ARCHIVE (<span id="fail-count">0</span> logged)</div>
+        <div id="fail-list" class="slist"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ PROTOCOLS (HABITS) ═══════════════ -->
+    <div class="module" id="mod-habits">
+      <div class="g2">
+        <div class="panel">
+          <div class="ptitle"><span class="ico">⚡</span>ADD PROTOCOL</div>
+          <div class="field"><div class="lbl">PROTOCOL NAME</div>
+            <input id="hname" placeholder="e.g. Read papers 45min, Meditate, Write 500 words...">
+          </div>
+          <div class="field"><div class="lbl">CATEGORY</div>
+            <select id="hcat">
+              <option value="RESEARCH">RESEARCH</option>
+              <option value="WRITING">WRITING</option>
+              <option value="HEALTH">HEALTH</option>
+              <option value="MIND">MIND</option>
+              <option value="BODY">BODY</option>
+              <option value="SOCIAL">SOCIAL</option>
+            </select>
+          </div>
+          <button class="btn btn-g" onclick="addHabit()">// INIT PROTOCOL</button>
+        </div>
+        <div class="panel">
+          <div class="ptitle"><span class="ico">📊</span>TODAY'S STATUS</div>
+          <div id="habit-prog"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">🎯</span>ACTIVE PROTOCOLS</div>
+        <div id="habits-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ TASK QUEUE ═══════════════ -->
+    <div class="module" id="mod-tasks">
+      <div class="panel">
+        <div class="ptitle"><span class="ico">▶</span>QUEUE NEW TASK</div>
+        <div class="frow">
+          <div><div class="lbl">TASK</div><input id="ttxt" placeholder="Describe the mission..."></div>
+          <div style="flex:0;min-width:110px;"><div class="lbl">PRIORITY</div>
+            <select id="tpri"><option value="HIGH">HIGH</option><option value="MED">MED</option><option value="LOW">LOW</option></select>
+          </div>
+          <div style="flex:0;min-width:130px;"><div class="lbl">CATEGORY</div>
+            <select id="tcat"><option>RESEARCH</option><option>WRITING</option><option>ADMIN</option><option>PERSONAL</option></select>
+          </div>
+          <button class="btn btn-c" onclick="addTask()" style="margin-top:18px;">// ADD</button>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="panel">
+          <div class="ptitle"><span class="ico">🔴</span>ACTIVE QUEUE</div>
+          <div id="tasks-active" class="slist"></div>
+        </div>
+        <div class="panel">
+          <div class="ptitle"><span class="ico">✓</span>COMPLETED</div>
+          <div id="tasks-done" class="slist"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ ADVISOR SYNC ═══════════════ -->
+    <div class="module" id="mod-advisor">
+      <div class="panel">
+        <div class="ptitle"><span class="ico">🎓</span>LOG MEETING</div>
+        <div class="g2">
+          <div class="field"><div class="lbl">MEETING DATE</div><input type="date" id="mdate"></div>
+          <div class="field"><div class="lbl">WITH</div><input id="mwith" placeholder="Advisor name / group..."></div>
+        </div>
+        <div class="field"><div class="lbl">AGENDA / DISCUSSION</div>
+          <textarea id="mdiscuss" placeholder="What was discussed?..."></textarea>
+        </div>
+        <div class="field"><div class="lbl">ADVISOR COMMENTS / FEEDBACK</div>
+          <textarea id="mcomments" placeholder="What did they say? Any criticisms, praise, suggestions?..."></textarea>
+        </div>
+        <div class="field"><div class="lbl">ACTION ITEMS (one per line)</div>
+          <textarea id="mactions" placeholder="1. Rerun experiment&#10;2. Read Vaswani et al.&#10;3. Submit draft by Friday" style="min-height:80px;"></textarea>
+        </div>
+        <div class="g2">
+          <div class="field"><div class="lbl">EMOTIONAL TONE</div>
+            <select id="mtone">
+              <option value="PRODUCTIVE">PRODUCTIVE — Clear direction</option>
+              <option value="MOTIVATED">MOTIVATED — Energized</option>
+              <option value="NEUTRAL">NEUTRAL — Standard check-in</option>
+              <option value="CONFUSED">CONFUSED — Need clarity</option>
+              <option value="STRESSED">STRESSED — Under pressure</option>
+              <option value="CONCERNED">CONCERNED — Red flags raised</option>
+            </select>
+          </div>
+          <div class="field"><div class="lbl">NEXT MEETING</div>
+            <input type="date" id="mnext">
+          </div>
+        </div>
+        <button class="btn btn-v" onclick="addMeeting()">// LOG MEETING</button>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">📋</span>MEETING HISTORY</div>
+        <div id="meeting-list" class="slist"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ CONCEPT GRAPH ═══════════════ -->
+    <div class="module" id="mod-graph">
+      <div style="margin-bottom:12px;">
+        <div style="font-family:'VT323',monospace;font-size:26px;color:var(--cyan);text-shadow:var(--gc);letter-spacing:3px;">🧠 CONCEPT GRAPH — YOUR BRAIN MAP</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;">Nodes are auto-generated from your papers, hypotheses, and journal tags. Drag to explore connections.</div>
+      </div>
+      <div class="g2" style="margin-bottom:16px;">
+        <div class="panel" style="padding:14px;">
+          <div class="ptitle">ADD CONCEPT NODE</div>
+          <div class="field"><div class="lbl">CONCEPT</div><input id="cname" placeholder="concept name..."></div>
+          <div class="field"><div class="lbl">TYPE</div>
+            <select id="ctype">
+              <option value="idea">IDEA</option>
+              <option value="paper">PAPER</option>
+              <option value="method">METHOD</option>
+              <option value="result">RESULT</option>
+              <option value="question">QUESTION</option>
+            </select>
+          </div>
+          <div class="field"><div class="lbl">CONNECT TO (comma separated)</div>
+            <input id="clinks" placeholder="other concept names...">
+          </div>
+          <button class="btn btn-c btn-sm" onclick="addConcept()">// ADD NODE</button>
+        </div>
+        <div class="panel" style="padding:14px;">
+          <div class="ptitle">LEGEND</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-family:'Share Tech Mono',monospace;font-size:11px;">
+            <div><span style="color:var(--cyan);">● IDEA</span></div>
+            <div><span style="color:var(--pink);">● PAPER</span></div>
+            <div><span style="color:var(--green);">● METHOD</span></div>
+            <div><span style="color:var(--yellow);">● RESULT</span></div>
+            <div><span style="color:var(--purple);">● QUESTION</span></div>
+          </div>
+          <hr class="sep">
+          <div style="font-size:11px;color:var(--dim);line-height:1.8;">
+            Drag nodes to rearrange.<br>
+            Click node to highlight connections.
+          </div>
+        </div>
+      </div>
+      <canvas id="concept-canvas"></canvas>
+    </div>
+
+    <!-- ═══════════════ WHY ═══════════════ -->
+    <div class="module" id="mod-why">
+      <div class="why-panel">
+        <div class="why-big" id="why-display">WHY ARE YOU DOING THIS?</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:20px;">Read this when you're lost. Remember this when the system breaks you.</div>
+      </div>
+      <hr class="sep">
+      <div class="g2">
+        <div class="panel">
+          <div class="ptitle"><span class="ico">🌟</span>YOUR MISSION STATEMENT</div>
+          <div class="field"><div class="lbl">CORE MOTIVATION</div>
+            <textarea id="why-motivation" placeholder="Why did you start this PhD? What drives you at your core?..." style="min-height:100px;"></textarea>
+          </div>
+          <div class="field"><div class="lbl">THE PROBLEM YOU'RE SOLVING</div>
+            <textarea id="why-problem" placeholder="What problem does your research solve? Why does it matter to the world?..." style="min-height:100px;"></textarea>
+          </div>
+          <div class="field"><div class="lbl">LONG-TERM VISION</div>
+            <textarea id="why-vision" placeholder="Where do you want to be in 10 years? What does success look like?..." style="min-height:100px;"></textarea>
+          </div>
+          <div class="field"><div class="lbl">YOUR MANTRA (shown above)</div>
+            <input id="why-mantra" placeholder="One powerful sentence that defines your purpose...">
+          </div>
+          <button class="btn btn-y" onclick="saveWhy()">// SAVE ANCHOR</button>
+        </div>
+        <div class="panel">
+          <div class="ptitle"><span class="ico">📖</span>RESEARCH STORY — TIMELINE</div>
+          <div id="research-timeline" class="slist" style="max-height:500px;"></div>
+          <hr class="sep">
+          <div class="field"><div class="lbl">ADD MILESTONE</div>
+            <input id="tl-title-inp" placeholder="Breakthrough / experiment / chapter...">
+          </div>
+          <div class="frow">
+            <div><div class="lbl">TYPE</div>
+              <select id="tl-type">
+                <option value="cy">BREAKTHROUGH</option>
+                <option value="pk">FAILURE</option>
+                <option value="gn">RESULT</option>
+                <option value="vl">IDEA</option>
+              </select>
+            </div>
+            <div><div class="lbl">DATE</div><input type="date" id="tl-date"></div>
+            <button class="btn btn-c btn-sm" onclick="addTimeline()" style="margin-top:18px;">// ADD</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ CORE ═══════════════ -->
+    <div class="module" id="mod-core">
+      <div class="g2">
+        <div class="panel" style="text-align:center;">
+          <div class="ptitle"><span class="ico">🔥</span>STREAK</div>
+          <div class="streak-num" id="streak-disp">0</div>
+          <div style="font-size:10px;color:var(--dim);letter-spacing:3px;font-family:'Share Tech Mono',monospace;">DAY STREAK</div>
+        </div>
+        <div class="panel">
+          <div class="ptitle"><span class="ico">📈</span>SYSTEM STATS</div>
+          <div id="core-stats"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">⚠</span>WARNINGS</div>
+        <div id="warnings"></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">💀</span>NUCLEAR OPTION</div>
+        <p style="font-size:12px;color:var(--dim);margin-bottom:12px;font-family:'Share Tech Mono',monospace;">WIPE ALL DATA. This cannot be undone. Export first if needed.</p>
+        <button class="btn btn-p" onclick="if(confirm('WIPE EVERYTHING?')){localStorage.clear();location.reload();}">// WIPE SYSTEM</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// BG CANVAS — MATRIX + GRID
+// ══════════════════════════════════
+const bgc = document.getElementById('bg-canvas');
+const bgx = bgc.getContext('2d');
+let bw, bh, drops;
+function initBg() {
+  bw = bgc.width = window.innerWidth;
+  bh = bgc.height = window.innerHeight;
+  drops = Array(Math.floor(bw/22)).fill(0).map(()=>Math.random()*bh/16|0);
+}
+function drawBg() {
+  bgx.fillStyle = 'rgba(5,5,15,0.06)';
+  bgx.fillRect(0,0,bw,bh);
+  bgx.font = '13px Share Tech Mono';
+  const chars = 'コア╔╗║═∂∑∫≈∞01CORTEX//ABCDEFαβγδ▸▹●◆';
+  drops.forEach((y,i)=>{
+    const ch = chars[Math.random()*chars.length|0];
+    const r = Math.random();
+    bgx.fillStyle = r>.92 ? '#ff2d78' : r>.85 ? '#9d00ff' : '#00e5ff';
+    bgx.globalAlpha = .6;
+    bgx.fillText(ch, i*22, y*16);
+    bgx.globalAlpha = 1;
+    if(y*16>bh && Math.random()>.975) drops[i]=0;
+    drops[i]++;
+  });
+}
+initBg();
+window.addEventListener('resize',initBg);
+setInterval(drawBg,60);
+
+// ══════════════════════════════════
+// BOOT
+// ══════════════════════════════════
+
+const boot = document.getElementById('boot');
+const _settings = JSON.parse(localStorage.getItem('cx_settings')||'{}');
+const _bootName = _settings.name ? `> OPERATIVE IDENTIFIED: ${_settings.name.toUpperCase()}` : '> AWAITING OPERATIVE IDENTIFICATION...';
+const _bootField = _settings.field ? `> FIELD: ${_settings.field.toUpperCase()}` : null;
+const _bootInst  = _settings.institution ? `> INSTITUTION: ${_settings.institution.toUpperCase()}` : null;
+
+const BOOT_LINES_FINAL = [
+  {t:'> CORTEX OS v3.0 — RESEARCH INTELLIGENCE SYSTEM', c:'c', d:150},
+  {t:'> INITIALIZING NEURAL INTERFACE DRIVERS...', c:'', d:300},
+  {t:_bootName, c:'p', d:450},
+  ...(_bootField ? [{t:_bootField, c:'g', d:550}] : []),
+  ...(_bootInst  ? [{t:_bootInst,  c:'', d:620}] : []),
+  {t:'> MOUNTING ENCRYPTED RESEARCH VAULT...', c:'g', d:700},
+  {t:'> LOADING HYPOTHESIS ENGINE...', c:'c', d:850},
+  {t:'> CALIBRATING FAILURE VAULT PROTOCOLS...', c:'p', d:1000},
+  {t:'> SYNCING CONCEPT GRAPH NEURAL MAP...', c:'', d:1150},
+  {t:'> [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%', c:'y', d:1350},
+  {t:'> ALL SYSTEMS NOMINAL. WELCOME BACK' + (_settings.name ? `, ${_settings.name.toUpperCase()}` : ', OPERATIVE') + '.', c:'p', d:1600},
+];
+
+BOOT_LINES_FINAL.forEach(({t,c,d})=>{
+  setTimeout(()=>{
+    const el = document.createElement('div');
+    el.className = 'bline' + (c?' '+c:'');
+    el.textContent = t;
+    boot.appendChild(el);
+  }, d);
+});
+setTimeout(()=>{
+  const bw = document.createElement('div');
+  bw.className = 'boot-progress';
+  const bf = document.createElement('div');
+  bf.className = 'boot-fill';
+  bw.appendChild(bf);
+  boot.appendChild(bw);
+},1400);
+setTimeout(()=>{
+  boot.style.transition='opacity .7s';
+  boot.style.opacity='0';
+  setTimeout(()=>{
+    boot.style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  },700);
+},3000);
+
+// ══════════════════════════════════
+// SETTINGS & NAME TAG
+// ══════════════════════════════════
+function openSettings() {
+  const s = ldo(K.settings||'cx_settings');
+  if(document.getElementById('settings-name')) document.getElementById('settings-name').value = s.name||'';
+  if(document.getElementById('settings-field')) document.getElementById('settings-field').value = s.field||'';
+  if(document.getElementById('settings-institution')) document.getElementById('settings-institution').value = s.institution||'';
+  const preview = document.getElementById('name-preview');
+  if(preview) preview.textContent = s.name||'YOUR NAME';
+  document.getElementById('settings-modal').style.display='flex';
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').style.display='none';
+}
+
+function saveSettings() {
+  const name = document.getElementById('settings-name').value.trim();
+  const field = document.getElementById('settings-field').value.trim();
+  const institution = document.getElementById('settings-institution').value.trim();
+  localStorage.setItem('cx_settings', JSON.stringify({name,field,institution}));
+  applyNameTag();
+  closeSettings();
+}
+
+function applyNameTag() {
+  const s = JSON.parse(localStorage.getItem('cx_settings')||'{}');
+  const nameEl = document.getElementById('operative-name-display');
+  if(nameEl) nameEl.textContent = s.name ? s.name.toUpperCase() : 'SET YOUR NAME';
+  // Update page title
+  if(s.name) document.title = `CORTEX // ${s.name.toUpperCase()} — Research OS`;
+}
+
+// ══════════════════════════════════
+// CLOCK
+// ══════════════════════════════════
+function tickClock(){
+  const n=new Date();
+  document.getElementById('clk').textContent=
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+}
+setInterval(tickClock,1000); tickClock();
+
+// ══════════════════════════════════
+// STORAGE
+// ══════════════════════════════════
+const K = {
+  papers:'cx_papers', journal:'cx_journal', habits:'cx_habits',
+  hlog:'cx_hlog', tasks:'cx_tasks', hypo:'cx_hypo', fail:'cx_fail',
+  meetings:'cx_meetings', concepts:'cx_concepts', why:'cx_why',
+  timeline:'cx_timeline', streak:'cx_streak', api:'cx_api'
+};
+const ld = k => { try{return JSON.parse(localStorage.getItem(k))||[];}catch{return [];} };
+const ldo = k => { try{return JSON.parse(localStorage.getItem(k))||{};}catch{return {};} };
+const sv = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const todayK = () => new Date().toISOString().split('T')[0];
+
+// ══════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════
+function go(name, btn) {
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('mod-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  renderAll();
+  if(name==='graph') setTimeout(initConceptGraph,100);
+}
+
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+const MOTTOS = [
+  'THE SYSTEM DEMANDS EXCELLENCE. SO DO YOU.',
+  'EVERY FAILED EXPERIMENT IS DATA. EVERY LOG IS LEGACY.',
+  'YOUR THESIS IS THE MISSION. THE MISSION IS EVERYTHING.',
+  'JACK IN. LOCK IN. THE FUTURE NEEDS YOUR RESEARCH.',
+  'FAILURE IS JUST A HYPOTHESIS THAT NEEDS MORE DATA.',
+  'THE BEST RESEARCHERS ARE THOSE WHO LOG EVERYTHING.',
+  'CORTEX REMEMBERS WHAT YOUR BRAIN FORGETS.',
+  'SCIENCE IS ITERATIVE. SO IS YOUR GREATNESS.',
+];
+
+function initApp() {
+  updateStreak();
+  applyNameTag();
+  // Show name on dashboard greeting if set
+  const s = JSON.parse(localStorage.getItem('cx_settings')||'{}');
+  if(s.name && !localStorage.getItem('cx_welcomed')) {
+    localStorage.setItem('cx_welcomed','1');
+  }
+  renderAll();
+}
+
+function renderAll() {
+  renderDash(); renderPapers(); renderJournal();
+  renderHypo('all'); renderFail(); renderHabits();
+  renderTasks(); renderMeetings(); renderWhy(); renderCore();
+}
+
+// ══════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════
+function renderDash() {
+  const papers = ld(K.papers), journal = ld(K.journal);
+  const habits = ld(K.habits), tasks = ld(K.tasks);
+  const hypos = ld(K.hypo), fails = ld(K.fail);
+  const today = todayK(), log = ldo(K.hlog);
+  const doneHabits = habits.filter(h=>log[today]&&log[today][h.id]).length;
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="scard cy"><div class="snum">${papers.length}</div><div class="slbl">PAPERS ARCHIVED</div></div>
+    <div class="scard pk"><div class="snum">${hypos.filter(h=>h.status!=='dead').length}</div><div class="slbl">ACTIVE HYPOTHESES</div></div>
+    <div class="scard gn"><div class="snum">${doneHabits}/${habits.length}</div><div class="slbl">PROTOCOLS TODAY</div></div>
+    <div class="scard vl"><div class="snum">${fails.length}</div><div class="slbl">VAULTED FAILURES</div></div>
+  `;
+
+  document.getElementById('dash-motive').textContent =
+    '> ' + MOTTOS[new Date().getDate() % MOTTOS.length];
+
+  // Dash habits
+  const dhEl = document.getElementById('dash-habits');
+  if(!habits.length) { dhEl.innerHTML='<div class="empty">NO PROTOCOLS</div>'; }
+  else dhEl.innerHTML = habits.slice(0,4).map(h=>{
+    const done = log[today]&&log[today][h.id];
+    return `<div class="habit-row ${done?'done':''}">
+      <div class="hcheck" onclick="toggleHabit('${h.id}')">${done?'✓':''}</div>
+      <div class="hname">${h.name}</div>
+      <span class="tag tg">${h.category}</span>
+    </div>`;
+  }).join('');
+
+  // Dash tasks
+  const dtEl = document.getElementById('dash-tasks');
+  const activeTasks = tasks.filter(t=>!t.done&&t.priority==='HIGH').slice(0,4);
+  if(!activeTasks.length) dtEl.innerHTML='<div class="empty">NO URGENT TASKS</div>';
+  else dtEl.innerHTML = activeTasks.map(t=>`
+    <div class="task-row">
+      <div class="tcheck" onclick="toggleTask('${t.id}')">○</div>
+      <div class="ttext">${t.text}</div>
+      <span class="badge bH">HIGH</span>
+    </div>`).join('');
+
+  // Dash hypo
+  const dhyEl = document.getElementById('dash-hypo');
+  const activeH = ld(K.hypo).filter(h=>h.status==='promising'||h.status==='testing').slice(0,3);
+  if(!activeH.length) dhyEl.innerHTML='<div class="empty">NO ACTIVE HYPOTHESES</div>';
+  else dhyEl.innerHTML = activeH.map(h=>`
+    <div class="item">
+      <div class="item-title">${h.text.slice(0,60)}${h.text.length>60?'...':''}</div>
+      <span class="hyp-status hs-${h.status}">${h.status.toUpperCase()}</span>
+    </div>`).join('');
+
+  // Dash journal
+  const djEl = document.getElementById('dash-journal');
+  const recent = [...journal].reverse().slice(0,2);
+  if(!recent.length) djEl.innerHTML='<div class="empty">NO TRANSMISSIONS</div>';
+  else djEl.innerHTML = recent.map(e=>`
+    <div class="item">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <span class="tag tp">${e.mood}</span>
+        <span style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;">${e.date}</span>
+      </div>
+      <div class="item-body">${e.text.slice(0,100)}${e.text.length>100?'...':''}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════
+// ARCHIVE
+// ══════════════════════════════════
+function addPaper() {
+  const title = document.getElementById('pt').value.trim();
+  if(!title) return alert('Enter a paper title!');
+  const papers = ld(K.papers);
+  papers.push({
+    id:uid(), title,
+    authors:document.getElementById('pa').value.trim(),
+    journal:document.getElementById('pj').value.trim(),
+    year:document.getElementById('py').value.trim(),
+    tags:document.getElementById('ptg').value.split(',').map(t=>t.trim()).filter(Boolean),
+    summary:document.getElementById('ps').value.trim(),
+    keyIdea:document.getElementById('pk').value.trim(),
+    affectsWork:document.getElementById('paw').value.trim(),
+    experiments:document.getElementById('pex').value.trim(),
+    linkedHypo:document.getElementById('plink').value.trim(),
+    date:new Date().toLocaleDateString(),
+  });
+  sv(K.papers,papers);
+  ['pt','pa','pj','py','ptg','ps','pk','paw','pex','plink'].forEach(id=>document.getElementById(id).value='');
+  renderPapers(); renderDash();
+}
+
+function renderPapers() {
+  const search = (document.getElementById('psearch')?.value||'').toLowerCase();
+  let papers = ld(K.papers);
+  if(search) papers=papers.filter(p=>
+    p.title.toLowerCase().includes(search)||
+    (p.authors||'').toLowerCase().includes(search)||
+    (p.tags||[]).some(t=>t.toLowerCase().includes(search))||
+    (p.keyIdea||'').toLowerCase().includes(search)
+  );
+  const el = document.getElementById('papers-list');
+  const cnt = document.getElementById('paper-count');
+  if(cnt) cnt.textContent = ld(K.papers).length;
+  if(!el) return;
+  if(!papers.length) { el.innerHTML='<div class="empty">NO PAPERS ARCHIVED YET</div>'; return; }
+  el.innerHTML = [...papers].reverse().map(p=>`
+    <div class="item" style="padding-right:50px;">
+      <div class="item-actions"><button class="delbtn" onclick="delItem('${p.id}','${K.papers}',renderPapers)">✕</button></div>
+      <div class="item-title">${p.title}</div>
+      <div class="item-meta">${[p.authors,p.journal,p.year].filter(Boolean).join(' · ')} · ${p.date}</div>
+      <div style="margin:6px 0;">${(p.tags||[]).map(t=>`<span class="tag tc">${t}</span>`).join('')}</div>
+      ${p.summary?`<div style="margin-top:8px;"><div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace;">3-LINE SUMMARY</div><div class="item-body">${p.summary}</div></div>`:''}
+      ${p.keyIdea?`<div style="margin-top:6px;"><div style="font-size:9px;color:var(--pink);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace;">KEY IDEA</div><div class="item-body">${p.keyIdea}</div></div>`:''}
+      ${p.affectsWork?`<div style="margin-top:6px;"><div style="font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace;">AFFECTS MY WORK</div><div class="item-body">${p.affectsWork}</div></div>`:''}
+      ${p.linkedHypo?`<div style="margin-top:8px;"><span class="link-badge">🧪 HYP: ${p.linkedHypo}</span></div>`:''}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════
+let selJournal = null;
+function saveJournal() {
+  const text = document.getElementById('jtext').value.trim();
+  if(!text) return alert('Write something first!');
+  const journal = ld(K.journal);
+  journal.push({
+    id:uid(), mood:document.getElementById('jmood').value,
+    energy:document.getElementById('jenergy').value||'?',
+    text, date:new Date().toLocaleString(),
+  });
+  sv(K.journal,journal);
+  document.getElementById('jtext').value='';
+  document.getElementById('ai-area').style.display='none';
+  renderJournal(); renderDash();
+}
+
+function renderJournal() {
+  const journal = ld(K.journal);
+  const el = document.getElementById('jlist');
+  if(!el) return;
+  if(!journal.length) { el.innerHTML='<div class="empty" style="padding:20px;font-size:10px;">NO ENTRIES YET</div>'; return; }
+  el.innerHTML = [...journal].reverse().map(e=>`
+    <div class="jentry ${selJournal===e.id?'sel':''}" onclick="selJ('${e.id}')">
+      <div class="jdate">${e.date} · <span style="color:var(--pink);">${e.mood}</span> · ⚡${e.energy||'?'}</div>
+      <div class="jprev">${e.text}</div>
+    </div>`).join('');
+}
+
+function selJ(id) {
+  selJournal = id;
+  const e = ld(K.journal).find(x=>x.id===id);
+  if(e) {
+    document.getElementById('jtext').value = e.text;
+    document.getElementById('jmood').value = e.mood;
+  }
+  renderJournal();
+}
+
+async function aiJournal() {
+  const text = document.getElementById('jtext').value.trim();
+  if(!text) return alert('Write something first!');
+  const key = localStorage.getItem(K.api);
+  if(!key) { document.getElementById('api-overlay').style.display='flex'; return; }
+  const area = document.getElementById('ai-area');
+  const rtxt = document.getElementById('ai-text');
+  area.style.display='block';
+  rtxt.textContent=''; rtxt.classList.add('cursor');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:400,
+        system:`You are CORTEX, a brutally intelligent AI research companion for a PhD scholar. You speak in a sharp, cyberpunk-inflected voice — direct, insightful, no fluff. Analyze journal entries and give real, grounded responses. No empty motivation. Point out patterns if visible. Be honest. Under 150 words. Start some lines with "> " for emphasis. Never use emojis.`,
+        messages:[{role:'user',content:`NEURAL LOG ENTRY\nMOOD: ${document.getElementById('jmood').value} | ENERGY: ${document.getElementById('jenergy').value||'?'}/10\n\n${text}`}]
+      })
+    });
+    const data = await res.json();
+    rtxt.classList.remove('cursor');
+    rtxt.textContent = data.content?.[0]?.text || '> SIGNAL LOST. CHECK API KEY.';
+  } catch(e) {
+    rtxt.classList.remove('cursor');
+    rtxt.textContent = '> TRANSMISSION FAILED: '+e.message;
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if(key) localStorage.setItem(K.api, key);
+  closeApi();
+}
+function closeApi() { document.getElementById('api-overlay').style.display='none'; }
+
+// ══════════════════════════════════
+// HYPOTHESIS ENGINE
+// ══════════════════════════════════
+let hypoFilter = 'all';
+function addHypo() {
+  const text = document.getElementById('ht').value.trim();
+  if(!text) return alert('State your hypothesis!');
+  const hypos = ld(K.hypo);
+  hypos.push({
+    id:uid(), text,
+    origin:document.getElementById('ho').value.trim(),
+    status:document.getElementById('hs').value,
+    experiments:document.getElementById('hexp').value.trim(),
+    tags:document.getElementById('htg').value.split(',').map(t=>t.trim()).filter(Boolean),
+    notes:document.getElementById('hn').value.trim(),
+    date:new Date().toLocaleDateString(),
+  });
+  sv(K.hypo,hypos);
+  ['ht','ho','hexp','htg','hn'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('hs').value='idea';
+  renderHypo(hypoFilter); renderDash();
+}
+
+function filterHypo(f) { hypoFilter=f; renderHypo(f); }
+
+function renderHypo(filter) {
+  let hypos = ld(K.hypo);
+  if(filter!=='all') hypos=hypos.filter(h=>h.status===filter);
+  const el = document.getElementById('hypo-list');
+  if(!el) return;
+  if(!hypos.length) { el.innerHTML='<div class="empty">NO HYPOTHESES MATCHING THIS FILTER</div>'; return; }
+  el.innerHTML = [...hypos].reverse().map(h=>`
+    <div class="item">
+      <div class="item-actions" style="display:flex;gap:6px;align-items:center;">
+        <select onchange="updateHypoStatus('${h.id}',this.value)" style="background:transparent;border:1px solid var(--border);color:var(--white);font-size:10px;padding:3px 6px;font-family:'Share Tech Mono',monospace;width:auto;">
+          <option value="idea" ${h.status==='idea'?'selected':''}>IDEA</option>
+          <option value="promising" ${h.status==='promising'?'selected':''}>PROMISING</option>
+          <option value="testing" ${h.status==='testing'?'selected':''}>TESTING</option>
+          <option value="dead" ${h.status==='dead'?'selected':''}>DEAD</option>
+        </select>
+        <button class="delbtn" onclick="delItem('${h.id}','${K.hypo}',()=>renderHypo(hypoFilter))">✕</button>
+      </div>
+      <div class="item-title" style="padding-right:180px;">${h.text}</div>
+      <div class="item-meta">${h.origin?'Origin: '+h.origin+' · ':''} ${h.date}</div>
+      ${h.experiments?`<div style="margin-top:5px;font-size:12px;color:rgba(232,232,255,0.6);">🧪 ${h.experiments}</div>`:''}
+      <div style="margin-top:6px;">${(h.tags||[]).map(t=>`<span class="tag tg">${t}</span>`).join('')}</div>
+      ${h.notes?`<div class="item-body" style="margin-top:8px;">${h.notes}</div>`:''}
+    </div>`).join('');
+}
+
+function updateHypoStatus(id, status) {
+  const hypos = ld(K.hypo);
+  const h = hypos.find(x=>x.id===id);
+  if(h) { h.status=status; sv(K.hypo,hypos); renderHypo(hypoFilter); renderDash(); }
+}
+
+// ══════════════════════════════════
+// FAILURE VAULT
+// ══════════════════════════════════
+function addFail() {
+  const title = document.getElementById('ft').value.trim();
+  if(!title) return alert('Name the failure!');
+  const fails = ld(K.fail);
+  fails.push({
+    id:uid(), title,
+    date:document.getElementById('fd').value || new Date().toLocaleDateString(),
+    wrong:document.getElementById('fw').value.trim(),
+    root:document.getElementById('frc').value.trim(),
+    lessons:document.getElementById('fl').value.trim(),
+    tags:document.getElementById('ftg').value.split(',').map(t=>t.trim()).filter(Boolean),
+    linkedHypo:document.getElementById('fh').value.trim(),
+    loggedAt:new Date().toLocaleDateString(),
+  });
+  sv(K.fail,fails);
+  ['ft','fd','fw','frc','fl','ftg','fh'].forEach(id=>document.getElementById(id).value='');
+  renderFail(); renderDash();
+}
+
+function renderFail() {
+  const fails = ld(K.fail);
+  const cnt = document.getElementById('fail-count');
+  if(cnt) cnt.textContent = fails.length;
+  const el = document.getElementById('fail-list');
+  if(!el) return;
+  if(!fails.length) { el.innerHTML='<div class="empty">VAULT IS EMPTY. LOG YOUR FIRST FAILURE — IT\'S VALUABLE.</div>'; return; }
+  el.innerHTML = [...fails].reverse().map(f=>`
+    <div class="fail-item">
+      <div class="item-actions"><button class="delbtn" onclick="delItem('${f.id}','${K.fail}',renderFail)">✕</button></div>
+      <div class="fail-title">💀 ${f.title}</div>
+      <div class="item-meta">${f.date} · Logged: ${f.loggedAt}</div>
+      ${f.wrong?`<div style="margin-top:8px;"><div style="font-size:9px;color:var(--pink);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace;">WHAT WENT WRONG</div><div class="item-body">${f.wrong}</div></div>`:''}
+      ${f.root?`<div style="margin-top:6px;"><div style="font-size:9px;color:var(--yellow);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace;">ROOT CAUSE</div><div class="item-body">${f.root}</div></div>`:''}
+      ${f.lessons?`<div style="margin-top:6px;"><div style="font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace;">LESSONS LEARNED ★</div><div class="item-body" style="color:var(--green);">${f.lessons}</div></div>`:''}
+      <div style="margin-top:8px;">${(f.tags||[]).map(t=>`<span class="tag tp">${t}</span>`).join('')}</div>
+      ${f.linkedHypo?`<div style="margin-top:6px;"><span class="link-badge">🧪 HYP: ${f.linkedHypo}</span></div>`:''}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════
+// HABITS
+// ══════════════════════════════════
+function addHabit() {
+  const name = document.getElementById('hname').value.trim();
+  if(!name) return alert('Enter a protocol name!');
+  const habits = ld(K.habits);
+  habits.push({ id:uid(), name, category:document.getElementById('hcat').value, created:todayK() });
+  sv(K.habits,habits);
+  document.getElementById('hname').value='';
+  renderHabits(); renderDash(); updateStreak();
+}
+
+function toggleHabit(id) {
+  const today = todayK(), log = ldo(K.hlog);
+  if(!log[today]) log[today]={};
+  log[today][id] = !log[today][id];
+  sv(K.hlog,log);
+  updateStreak(); renderHabits(); renderDash();
+}
+
+function renderHabits() {
+  const habits = ld(K.habits), today = todayK(), log = ldo(K.hlog);
+  const el = document.getElementById('habits-list');
+  const pg = document.getElementById('habit-prog');
+  if(!el) return;
+  if(!habits.length) { el.innerHTML='<div class="empty">NO PROTOCOLS. ADD ONE!</div>'; }
+  else {
+    el.innerHTML = habits.map(h=>{
+      const done = log[today]&&log[today][h.id];
+      const dots = Array.from({length:7},(_,i)=>{
+        const d=new Date(); d.setDate(d.getDate()-(6-i));
+        const k=d.toISOString().split('T')[0];
+        return `<div class="sdot ${log[k]&&log[k][h.id]?'on':''}"></div>`;
+      }).join('');
+      return `<div class="habit-row ${done?'done':''}">
+        <div class="hcheck" onclick="toggleHabit('${h.id}')">${done?'✓':''}</div>
+        <div style="flex:1;">
+          <div class="hname">${h.name}</div>
+          <div class="sdots">${dots}</div>
+        </div>
+        <span class="tag tg">${h.category}</span>
+        <button class="delbtn" onclick="delHabit('${h.id}')">✕</button>
+      </div>`;
+    }).join('');
+  }
+  if(pg) {
+    const done = habits.filter(h=>log[today]&&log[today][h.id]).length;
+    const pct = habits.length ? Math.round(done/habits.length*100) : 0;
+    pg.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:11px;color:var(--dim);font-family:'Share Tech Mono',monospace;">COMPLETION</span>
+        <span style="font-family:'Orbitron',sans-serif;font-size:13px;color:var(--green);text-shadow:var(--gg);">${pct}%</span>
+      </div>
+      <div class="xpwrap"><div class="xpfill xp-g" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:var(--dim);margin-top:8px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;">${done} of ${habits.length} protocols</div>`;
+  }
+}
+
+function delHabit(id) {
+  sv(K.habits, ld(K.habits).filter(h=>h.id!==id));
+  renderHabits(); renderDash();
+}
+
+// ══════════════════════════════════
+// TASKS
+// ══════════════════════════════════
+function addTask() {
+  const text = document.getElementById('ttxt').value.trim();
+  if(!text) return alert('Enter a task!');
+  const tasks = ld(K.tasks);
+  tasks.push({
+    id:uid(), text, priority:document.getElementById('tpri').value,
+    category:document.getElementById('tcat').value,
+    done:false, date:new Date().toLocaleDateString(),
+  });
+  sv(K.tasks,tasks);
+  document.getElementById('ttxt').value='';
+  renderTasks(); renderDash();
+}
+
+function toggleTask(id) {
+  const tasks = ld(K.tasks);
+  const t = tasks.find(x=>x.id===id);
+  if(t) { t.done=!t.done; sv(K.tasks,tasks); renderTasks(); renderDash(); }
+}
+
+function renderTasks() {
+  const tasks = ld(K.tasks);
+  const active = tasks.filter(t=>!t.done).sort((a,b)=>({'HIGH':0,'MED':1,'LOW':2}[a.priority]-{'HIGH':0,'MED':1,'LOW':2}[b.priority]));
+  const done = tasks.filter(t=>t.done);
+  const mkList = list => list.length ? list.map(t=>`
+    <div class="task-row ${t.done?'done':''}">
+      <div class="tcheck" onclick="toggleTask('${t.id}')">${t.done?'✓':'○'}</div>
+      <div><div class="ttext">${t.text}</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:2px;font-family:'Share Tech Mono',monospace;">${t.category} · ${t.date}</div>
+      </div>
+      <span class="badge b${t.priority.charAt(0)}">${t.priority}</span>
+      <button class="delbtn" onclick="delItem('${t.id}','${K.tasks}',renderTasks)">✕</button>
+    </div>`).join('') : '<div class="empty">EMPTY</div>';
+  const ae=document.getElementById('tasks-active'), de=document.getElementById('tasks-done');
+  if(ae) ae.innerHTML=mkList(active);
+  if(de) de.innerHTML=mkList(done.slice(-10).reverse());
+}
+
+// ══════════════════════════════════
+// ADVISOR SYNC
+// ══════════════════════════════════
+function addMeeting() {
+  const discuss = document.getElementById('mdiscuss').value.trim();
+  if(!discuss) return alert('Add discussion notes!');
+  const meetings = ld(K.meetings);
+  const actions = document.getElementById('mactions').value.trim().split('\n').filter(Boolean);
+  meetings.push({
+    id:uid(),
+    date:document.getElementById('mdate').value||new Date().toLocaleDateString(),
+    with:document.getElementById('mwith').value.trim()||'Advisor',
+    discuss, comments:document.getElementById('mcomments').value.trim(),
+    actions, tone:document.getElementById('mtone').value,
+    nextMeeting:document.getElementById('mnext').value,
+  });
+  sv(K.meetings,meetings);
+  // push action items to task queue
+  const tasks = ld(K.tasks);
+  actions.forEach(a=>{
+    if(a.trim()) tasks.push({id:uid(),text:`[ADVISOR] ${a.replace(/^\d+\.\s*/,'')}`,priority:'HIGH',category:'ADMIN',done:false,date:new Date().toLocaleDateString()});
+  });
+  sv(K.tasks,tasks);
+  ['mdiscuss','mcomments','mactions','mwith','mnext'].forEach(id=>document.getElementById(id).value='');
+  renderMeetings(); renderTasks();
+  alert('Meeting logged! Action items pushed to Task Queue.');
+}
+
+function renderMeetings() {
+  const meetings = ld(K.meetings);
+  const el = document.getElementById('meeting-list');
+  if(!el) return;
+  if(!meetings.length) { el.innerHTML='<div class="empty">NO MEETINGS LOGGED</div>'; return; }
+  const toneColors = {PRODUCTIVE:'var(--green)',MOTIVATED:'var(--cyan)',NEUTRAL:'var(--dim)',CONFUSED:'var(--yellow)',STRESSED:'var(--pink)',CONCERNED:'var(--pink)'};
+  el.innerHTML = [...meetings].reverse().map(m=>`
+    <div class="meeting-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="meet-title">📋 ${m.with} · ${m.date}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:9px;color:${toneColors[m.tone]||'var(--dim)'};font-family:'Share Tech Mono',monospace;">${m.tone}</span>
+          <button class="delbtn" onclick="delItem('${m.id}','${K.meetings}',renderMeetings)">✕</button>
+        </div>
+      </div>
+      <div class="item-body">${m.discuss}</div>
+      ${m.comments?`<div style="margin-top:8px;border-left:2px solid var(--purple);padding-left:10px;font-size:12px;color:rgba(200,150,255,0.8);">"${m.comments}"</div>`:''}
+      ${m.actions.length?`<div style="margin-top:8px;"><div style="font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:4px;font-family:'Share Tech Mono',monospace;">ACTION ITEMS</div>${m.actions.map(a=>`<div style="font-size:12px;color:var(--green);padding:2px 0;">▸ ${a}</div>`).join('')}</div>`:''}
+      ${m.nextMeeting?`<div style="margin-top:6px;font-size:10px;color:var(--cyan);font-family:'Share Tech Mono',monospace;">NEXT: ${m.nextMeeting}</div>`:''}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════
+// CONCEPT GRAPH
+// ══════════════════════════════════
+let conceptNodes = [], conceptEdges = [], dragNode = null, dragOff = {x:0,y:0};
+const NODE_COLORS = {idea:'#00e5ff',paper:'#ff2d78',method:'#00ff9d',result:'#ffe600',question:'#9d00ff'};
+
+function addConcept() {
+  const name = document.getElementById('cname').value.trim();
+  if(!name) return alert('Enter a concept name!');
+  const concepts = ld(K.concepts);
+  const links = document.getElementById('clinks').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const node = {id:uid(),name,type:document.getElementById('ctype').value,links,x:Math.random()*600+100,y:Math.random()*300+60};
+  concepts.push(node);
+  sv(K.concepts,concepts);
+  document.getElementById('cname').value='';
+  document.getElementById('clinks').value='';
+  initConceptGraph();
+}
+
+function initConceptGraph() {
+  const canvas = document.getElementById('concept-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight || 420;
+  const concepts = ld(K.concepts);
+  if(!concepts.length) {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.font='14px Share Tech Mono'; ctx.fillStyle='rgba(232,232,255,0.2)';
+    ctx.textAlign='center'; ctx.fillText('ADD CONCEPT NODES TO BUILD YOUR BRAIN MAP',canvas.width/2,canvas.height/2);
+    return;
+  }
+
+  // Position nodes with physics-like spread
+  const nodes = concepts.map(c=>({...c, vx:0, vy:0}));
+  conceptNodes = nodes;
+
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='rgba(5,5,15,0.9)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Draw grid
+    ctx.strokeStyle='rgba(0,229,255,0.05)'; ctx.lineWidth=1;
+    for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+    for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+    // Draw edges
+    nodes.forEach(n=>{
+      (n.links||[]).forEach(lname=>{
+        const target = nodes.find(x=>x.name.toLowerCase()===lname.toLowerCase());
+        if(target){
+          ctx.beginPath(); ctx.moveTo(n.x,n.y); ctx.lineTo(target.x,target.y);
+          ctx.strokeStyle='rgba(0,229,255,0.2)'; ctx.lineWidth=1.5; ctx.stroke();
+        }
+      });
+    });
+    // Draw nodes
+    nodes.forEach(n=>{
+      const color = NODE_COLORS[n.type]||'#00e5ff';
+      ctx.beginPath(); ctx.arc(n.x,n.y,18,0,Math.PI*2);
+      ctx.fillStyle='rgba(5,5,15,0.9)'; ctx.fill();
+      ctx.strokeStyle=color; ctx.lineWidth=2;
+      ctx.shadowColor=color; ctx.shadowBlur=12;
+      ctx.stroke(); ctx.shadowBlur=0;
+      ctx.fillStyle=color; ctx.font='bold 11px Share Tech Mono';
+      ctx.textAlign='center'; ctx.fillText(n.name.slice(0,12),n.x,n.y+32);
+      // type dot
+      ctx.beginPath(); ctx.arc(n.x,n.y,6,0,Math.PI*2);
+      ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+    });
+  }
+
+  draw();
+
+  // Drag
+  canvas.onmousedown = e=>{
+    const rect=canvas.getBoundingClientRect(), mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    dragNode=nodes.find(n=>Math.hypot(n.x-mx,n.y-my)<22)||null;
+    if(dragNode){dragOff={x:mx-dragNode.x,y:my-dragNode.y};}
+  };
+  canvas.onmousemove = e=>{
+    if(!dragNode) return;
+    const rect=canvas.getBoundingClientRect();
+    dragNode.x=e.clientX-rect.left-dragOff.x;
+    dragNode.y=e.clientY-rect.top-dragOff.y;
+    draw();
+  };
+  canvas.onmouseup = ()=>{
+    if(dragNode){
+      const concepts=ld(K.concepts); const c=concepts.find(x=>x.id===dragNode.id);
+      if(c){c.x=dragNode.x;c.y=dragNode.y;sv(K.concepts,concepts);}
+    }
+    dragNode=null;
+  };
+}
+
+// ══════════════════════════════════
+// WHY PANEL
+// ══════════════════════════════════
+function saveWhy() {
+  const why = {
+    motivation:document.getElementById('why-motivation').value.trim(),
+    problem:document.getElementById('why-problem').value.trim(),
+    vision:document.getElementById('why-vision').value.trim(),
+    mantra:document.getElementById('why-mantra').value.trim(),
+  };
+  sv(K.why, why);
+  renderWhy();
+  alert('Anchor saved. Remember this on dark days.');
+}
+
+function renderWhy() {
+  const why = ldo(K.why);
+  const el = document.getElementById('why-display');
+  if(el && why.mantra) el.textContent = why.mantra.toUpperCase();
+  // Prefill fields
+  if(document.getElementById('why-motivation')) {
+    ['motivation','problem','vision','mantra'].forEach(k=>{
+      const el2=document.getElementById('why-'+k);
+      if(el2&&why[k]) el2.value=why[k];
+    });
+  }
+  renderTimeline();
+}
+
+// ══════════════════════════════════
+// TIMELINE
+// ══════════════════════════════════
+function addTimeline() {
+  const title = document.getElementById('tl-title-inp').value.trim();
+  if(!title) return alert('Add a milestone title!');
+  const tl = ld(K.timeline);
+  tl.push({
+    id:uid(), title,
+    type:document.getElementById('tl-type').value,
+    date:document.getElementById('tl-date').value||new Date().toLocaleDateString(),
+  });
+  sv(K.timeline,tl);
+  document.getElementById('tl-title-inp').value='';
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const tl = ld(K.timeline);
+  const el = document.getElementById('research-timeline');
+  if(!el) return;
+  if(!tl.length) { el.innerHTML='<div class="empty">NO MILESTONES YET</div>'; return; }
+  el.innerHTML = `<div class="timeline">${[...tl].reverse().map(t=>`
+    <div class="tl-item">
+      <div class="tl-dot ${t.type}"></div>
+      <div class="tl-card">
+        <div class="tl-date">${t.date}</div>
+        <div class="tl-title">${t.title}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+// ══════════════════════════════════
+// STREAK
+// ══════════════════════════════════
+function updateStreak() {
+  const habits = ld(K.habits);
+  if(!habits.length) { sv(K.streak,0); return; }
+  const log = ldo(K.hlog);
+  let streak=0;
+  for(let i=0;i<365;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const k=d.toISOString().split('T')[0];
+    if(habits.some(h=>log[k]&&log[k][h.id])) streak++;
+    else if(i>0) break;
+  }
+  sv(K.streak,streak);
+}
+
+// ══════════════════════════════════
+// CORE
+// ══════════════════════════════════
+function renderCore() {
+  const streak = parseInt(localStorage.getItem(K.streak)||'0');
+  const el = document.getElementById('streak-disp');
+  if(el) el.textContent=streak;
+
+  const papers=ld(K.papers), journal=ld(K.journal), hypos=ld(K.hypo);
+  const tasks=ld(K.tasks), fails=ld(K.fail), habits=ld(K.habits);
+  const today=todayK(), log=ldo(K.hlog);
+  const doneH=habits.filter(h=>log[today]&&log[today][h.id]).length;
+  const doneT=tasks.filter(t=>t.done).length, totalT=tasks.length;
+  const tpct=totalT?Math.round(doneT/totalT*100):0;
+
+  const se=document.getElementById('core-stats');
+  if(se) se.innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:8px;font-family:'Share Tech Mono',monospace;font-size:11px;">
+      ${[['PAPERS ARCHIVED',papers.length,'var(--cyan)'],['HYPOTHESES',hypos.length,'var(--green)'],
+         ['FAILURES VAULTED',fails.length,'var(--pink)'],['JOURNAL ENTRIES',journal.length,'var(--purple)'],
+         ['TASK COMPLETION',tpct+'%','var(--yellow)']].map(([l,v,c])=>`
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--dim);">${l}</span>
+          <span style="color:${c};font-family:'Orbitron',sans-serif;font-size:12px;">${v}</span>
+        </div>`).join('')}
+    </div>
+    <div style="margin-top:12px;font-size:10px;color:var(--dim);letter-spacing:1px;font-family:'Share Tech Mono',monospace;">TASK RATE</div>
+    <div class="xpwrap"><div class="xpfill xp-c" style="width:${tpct}%"></div></div>
+    <div style="margin-top:10px;font-size:10px;color:var(--dim);letter-spacing:1px;font-family:'Share Tech Mono',monospace;">TODAY'S PROTOCOLS</div>
+    <div class="xpwrap"><div class="xpfill xp-g" style="width:${habits.length?Math.round(doneH/habits.length*100):0}%"></div></div>
+  `;
+
+  const warns=[];
+  if(habits.length&&doneH===0) warns.push('⚠ NO PROTOCOLS COMPLETED TODAY. SYSTEM INTEGRITY AT RISK.');
+  if(tasks.filter(t=>!t.done&&t.priority==='HIGH').length>3) warns.push('⚠ CRITICAL: 3+ HIGH PRIORITY TASKS PENDING.');
+  if(streak===0&&habits.length>0) warns.push('⚠ STREAK BROKEN. REINITIALIZE PROTOCOL SEQUENCE.');
+  if(papers.length===0) warns.push('⚠ ARCHIVE EMPTY. BEGIN UPLOADING RESEARCH DATA.');
+  if(hypos.filter(h=>h.status==='idea').length>5) warns.push('⚠ TOO MANY IDEAS IN LIMBO. TEST OR KILL SOME HYPOTHESES.');
+  const we=document.getElementById('warnings');
+  if(we) we.innerHTML = warns.length
+    ? warns.map(w=>`<div class="warn">${w}</div>`).join('')
+    : '<div style="color:var(--green);font-size:13px;padding:10px;font-family:\'Share Tech Mono\',monospace;">✓ ALL SYSTEMS NOMINAL.</div>';
+}
+
+// ══════════════════════════════════
+// GENERIC DELETE
+// ══════════════════════════════════
+function delItem(id, key, cb) {
+  sv(key, ld(key).filter(x=>x.id!==id));
+  if(cb) cb(); renderDash();
+}
+</script>
+</body>
+</html>
