@@ -140,6 +140,14 @@ body::after {
   position:sticky; top:0; z-index:500;
 }
 
+/* ── RETRO GRAPHIC STRIP  ── */
+.retro-strip {
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--cyan) 0px, var(--cyan) 8px, transparent 8px, transparent 16px, var(--pink) 16px, var(--pink) 24px, transparent 24px, transparent 32px);
+  animation: stripScroll 3s linear infinite;
+}
+@keyframes stripScroll { from{background-position:0 0} to{background-position:64px 0} }
+  
 .logo-wrap { display:flex; align-items:center; gap:16px; }
 
 .logo {
@@ -204,6 +212,13 @@ body::after {
   border-bottom-color:var(--cyan);
   background:rgba(0,255,255,0.07);
 }
+/* ── NAV ACCENT GRAPHICS ── */
+.nav-deco {
+  position:absolute; right:28px; top:0;
+  display:flex; align-items:center; gap:12px; height:100%;
+  pointer-events:none; opacity:0.3;
+}
+.nav-deco svg { width:24px; height:24px; }
 
 /* ── CONTENT ── */
 .content { padding:24px 28px; max-width:1500px; margin:0 auto; }
@@ -791,6 +806,66 @@ select option { background:#060614; color:#fff; }
 </svg>
 @keyframes spin3d { from{transform:rotateY(0deg) rotateX(15deg)} to{transform:rotateY(360deg) rotateX(15deg)} }
 
+<!-- CYBERPUNK FIGURE SILHOUETTE -->
+<svg style="position:fixed;bottom:0;right:0;width:220px;height:380px;z-index:0;opacity:0.09;pointer-events:none;" viewBox="0 0 220 380" fill="none">
+  <!-- Stylized standing figure in coat -->
+  <path d="M110 20 C90 20 75 40 75 65 L75 90 C70 95 65 105 65 115 L65 200 L50 320 L80 320 L95 230 L110 230 L125 230 L140 320 L170 320 L155 200 L155 115 C155 105 150 95 145 90 L145 65 C145 40 130 20 110 20Z" stroke="#00ffff" stroke-width="1.5"/>
+  <!-- Head -->
+  <circle cx="110" cy="35" r="18" stroke="#ff00aa" stroke-width="1.5"/>
+  <!-- Coat collar -->
+  <path d="M85 90 L110 110 L135 90" stroke="#00ffff" stroke-width="1"/>
+  <!-- Arm left extended -->
+  <path d="M75 130 L30 170 L20 210" stroke="#00ffff" stroke-width="1.5"/>
+  <!-- Arm right -->
+  <path d="M145 130 L180 155" stroke="#cc00ff" stroke-width="1.5"/>
+  <!-- Gun/device in hand -->
+  <rect x="175" y="150" width="25" height="10" rx="2" stroke="#ff00aa" stroke-width="1.5"/>
+  <!-- Neon glow lines on coat -->
+  <line x1="95" y1="120" x2="95" y2="200" stroke="#cc00ff" stroke-width="0.7" stroke-dasharray="4,4"/>
+  <line x1="125" y1="120" x2="125" y2="200" stroke="#cc00ff" stroke-width="0.7" stroke-dasharray="4,4"/>
+  <!-- Targeting HUD circle around head -->
+  <circle cx="110" cy="35" r="28" stroke="#00ffff" stroke-width="0.5" stroke-dasharray="6,4"/>
+  <line x1="82" y1="35" x2="75" y2="35" stroke="#00ffff" stroke-width="0.5"/>
+  <line x1="138" y1="35" x2="145" y2="35" stroke="#00ffff" stroke-width="0.5"/>
+  <line x1="110" y1="7" x2="110" y2="0" stroke="#00ffff" stroke-width="0.5"/>
+</svg>
+
+<!-- WIREFRAME SPHERE (retro-futurism kit style) -->
+<svg style="position:fixed;top:25%;left:1%;width:100px;height:100px;z-index:0;opacity:0.14;pointer-events:none;animation:spin3d 30s linear infinite;" viewBox="0 0 100 100">
+  <ellipse cx="50" cy="50" rx="40" ry="40" fill="none" stroke="#cc00ff" stroke-width="1"/>
+  <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#cc00ff" stroke-width="0.8"/>
+  <ellipse cx="50" cy="50" rx="40" ry="28" fill="none" stroke="#00ffff" stroke-width="0.5"/>
+  <ellipse cx="50" cy="50" rx="16" ry="40" fill="none" stroke="#ff00aa" stroke-width="0.8"/>
+  <line x1="10" y1="50" x2="90" y2="50" stroke="#cc00ff" stroke-width="0.5"/>
+  <line x1="50" y1="10" x2="50" y2="90" stroke="#ff00aa" stroke-width="0.5"/>
+</svg>
+
+<!-- VAPORWAVE GRID HORIZON (images 4, 9 style) -->
+<svg style="position:fixed;bottom:0;left:0;width:100%;height:200px;z-index:0;opacity:0.10;pointer-events:none;" viewBox="0 0 1400 200" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cc00ff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ff00aa" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+  <!-- Horizontal lines converging to horizon -->
+  <line x1="0" y1="50" x2="1400" y2="50" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="0" y1="80" x2="1400" y2="80" stroke="url(#hg)" stroke-width="1"/>
+  <line x1="0" y1="110" x2="1400" y2="110" stroke="url(#hg)" stroke-width="1.2"/>
+  <line x1="0" y1="140" x2="1400" y2="140" stroke="url(#hg)" stroke-width="1.5"/>
+  <line x1="0" y1="170" x2="1400" y2="170" stroke="url(#hg)" stroke-width="2"/>
+  <line x1="0" y1="200" x2="1400" y2="200" stroke="url(#hg)" stroke-width="3"/>
+  <!-- Vertical lines converging to vanishing point -->
+  <line x1="700" y1="0" x2="0" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="700" y1="0" x2="200" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="700" y1="0" x2="400" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="700" y1="0" x2="600" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="700" y1="0" x2="800" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="700" y1="0" x2="1000" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="700" y1="0" x2="1200" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+  <line x1="700" y1="0" x2="1400" y2="200" stroke="url(#hg)" stroke-width="0.8"/>
+</svg>
+  
 <!-- BOOT -->
 <div id="boot">
   <div class="boot-ascii">CORTEX</div>
@@ -863,6 +938,7 @@ select option { background:#060614; color:#fff; }
     </div>
   </div>
 
+  <div class="retro-strip"></div>
   <!-- NAV -->
   <div class="nav">
     <button class="ntab active" onclick="go('dash',this)">▸ DASHBOARD</button>
@@ -876,6 +952,11 @@ select option { background:#060614; color:#fff; }
     <button class="ntab" onclick="go('graph',this)">▸ CONCEPT GRAPH</button>
     <button class="ntab" onclick="go('why',this)">▸ WHY</button>
     <button class="ntab" onclick="go('core',this)">▸ CORE</button>
+    <div class="nav-deco">
+  <svg viewBox="0 0 24 24"><polygon points="12,2 22,20 2,20" fill="none" stroke="#00ffff" stroke-width="1.5"/></svg>
+  <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" fill="none" stroke="#ff00aa" stroke-width="1.5" transform="rotate(15 12 12)"/></svg>
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#cc00ff" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#cc00ff" opacity="0.5"/></svg>
+</div>
   </div>
 
   <div class="content">
