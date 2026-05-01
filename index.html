@@ -951,6 +951,7 @@ on  oninput="globalSearch()" style="width:200px;">
     <button class="ntab" onclick="go('fail',this)">▸ FAILURE VAULT</button>
     <button class="ntab" onclick="go('habits',this)">▸ PROTOCOLS</button>
     <button class="ntab" onclick="go('tasks',this)">▸ TASK QUEUE</button>
+    <button class="ntab" onclick="go('tasks',this)">▸ PAPER TRACKER</button>
     <button class="ntab" onclick="go('advisor',this)">▸ ADVISOR SYNC</button>
     <button class="ntab" onclick="go('graph',this)">▸ CONCEPT GRAPH</button>
     <button class="ntab" onclick="go('papersub',this)">▸ PAPER TRACKER</button>
@@ -1185,50 +1186,79 @@ on  oninput="globalSearch()" style="width:200px;">
 
     <!-- ═══════════════ PROTOCOLS (HABITS) ═══════════════ -->
     <div class="module" id="mod-habits">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'VT323',monospace;font-size:28px;color:var(--green);text-shadow:var(--gg);letter-spacing:3px;">⚡ PROTOCOL ENGINE — SYSTEMATIC RESEARCH RITUALS</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;">Define, document, and execute your research protocols. Each protocol is a tested, repeatable procedure that moves your science forward.</div>
+      </div>
       <div class="g2">
         <div class="panel">
-          <div class="ptitle"><span class="ico">⚡</span>ADD PROTOCOL</div>
-          <hr class="sep">
-
-          <div class="ptitle">REPRODUCIBILITY</div>
-
-          <div class="field">
-            <div class="lbl">SCRIPTS (GROMACS / PLUMED)</div>
-            <textarea id="rscript"></textarea>
-          </div>
-
-          <div class="field">
-            <div class="lbl">INPUT FILES (.mdp, .top)</div>
-            <textarea id="rinput"></textarea>
-          </div>
-
-          <div class="field">
-            <div class="lbl">STEP-BY-STEP PROTOCOL</div>
-            <textarea id="rsteps"></textarea>
-          </div>
-          
+          <div class="ptitle"><span class="ico">⚡</span>ADD / DEFINE PROTOCOL</div>
           <div class="field"><div class="lbl">PROTOCOL NAME</div>
-            <input id="hname" placeholder="e.g. Read papers 45min, Meditate, Write 500 words...">
+            <input id="hname" placeholder="e.g. GROMACS MD Run, Daily Paper Reading, PLUMED Metadynamics...">
           </div>
-          <div class="field"><div class="lbl">CATEGORY</div>
-            <select id="hcat">
-              <option value="RESEARCH">RESEARCH</option>
-              <option value="WRITING">WRITING</option>
-              <option value="HEALTH">HEALTH</option>
-              <option value="MIND">MIND</option>
-              <option value="BODY">BODY</option>
-              <option value="SOCIAL">SOCIAL</option>
-            </select>
+          <div class="g2">
+            <div class="field"><div class="lbl">CATEGORY</div>
+              <select id="hcat">
+                <option value="SIMULATION">SIMULATION</option>
+                <option value="ANALYSIS">ANALYSIS</option>
+                <option value="WET_LAB">WET LAB</option>
+                <option value="RESEARCH">RESEARCH</option>
+                <option value="WRITING">WRITING</option>
+                <option value="HEALTH">HEALTH</option>
+                <option value="MIND">MIND</option>
+                <option value="BODY">BODY</option>
+                <option value="SOCIAL">SOCIAL</option>
+              </select>
+            </div>
+            <div class="field"><div class="lbl">FREQUENCY</div>
+              <select id="hfreq">
+                <option value="DAILY">DAILY</option>
+                <option value="WEEKLY">WEEKLY</option>
+                <option value="PER_EXPERIMENT">PER EXPERIMENT</option>
+                <option value="AS_NEEDED">AS NEEDED</option>
+              </select>
+            </div>
           </div>
-          <button class="btn btn-g" onclick="addHabit()">// INIT PROTOCOL</button>
+          <div class="field"><div class="lbl">PURPOSE / OBJECTIVE ★</div>
+            <textarea id="hpurpose" placeholder="What is this protocol designed to achieve? What scientific question does it address?" style="min-height:70px;"></textarea>
+          </div>
+          <div class="field"><div class="lbl">STEP-BY-STEP PROCEDURE ★</div>
+            <textarea id="hsteps" placeholder="1. Prepare system topology (.top file)&#10;2. Energy minimize with steepest descent&#10;3. NVT equilibration (100ps, dt=0.002 fs)&#10;4. NPT equilibration (100ps)&#10;5. Production MD run (100ns)&#10;..." style="min-height:140px; font-size:13px; line-height:1.8;"></textarea>
+          </div>
+          <div class="field"><div class="lbl">SCRIPTS / COMMANDS (GROMACS, PLUMED, Python...)</div>
+            <textarea id="hscripts" placeholder="gmx grompp -f md.mdp -c npt.gro -t npt.cpt -p topol.top -o md.tpr&#10;gmx mdrun -v -deffnm md&#10;# Or paste PLUMED input here..." style="min-height:100px; font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--cyan);"></textarea>
+          </div>
+          <div class="field"><div class="lbl">EXPECTED OUTPUT / SUCCESS CRITERIA</div>
+            <textarea id="houtput" placeholder="What does a successful run produce? What files? What metrics indicate success?" style="min-height:70px;"></textarea>
+          </div>
+          <div class="field"><div class="lbl">KNOWN PITFALLS / WARNINGS ⚠</div>
+            <textarea id="hpitfalls" placeholder="Common errors, edge cases, parameter traps to avoid..." style="min-height:70px;"></textarea>
+          </div>
+          <div class="field"><div class="lbl">LINKED EXPERIMENT / HYPOTHESIS</div>
+            <input id="hlink" placeholder="Which experiment or hypothesis does this protocol serve?">
+          </div>
+          <button class="btn btn-g" onclick="addHabit()">// INITIALIZE PROTOCOL</button>
         </div>
-        <div class="panel">
-          <div class="ptitle"><span class="ico">📊</span>TODAY'S STATUS</div>
-          <div id="habit-prog"></div>
+        <div>
+          
+          <div class="panel">
+            <div class="ptitle"><span class="ico">💡</span>PROTOCOL TIPS</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--dim);line-height:2;">
+              <div>▸ Write steps <span style="color:var(--cyan);">before</span> running — not after</div>
+              <div>▸ Log every parameter change with <span style="color:var(--green);">timestamp</span></div>
+              <div>▸ A protocol you can't repeat is <span style="color:var(--pink);">not a protocol</span></div>
+              <div>▸ Link to your Reproducibility scripts</div>
+              <div>▸ Note the <span style="color:var(--yellow);">version</span> of every tool used</div>
+              <div style="margin-top:10px;padding:10px;border:1px solid rgba(0,255,255,0.2);background:rgba(0,255,255,0.04);">
+                <div style="color:var(--cyan);font-size:10px;letter-spacing:2px;margin-bottom:4px;">RULE OF THUMB</div>
+                "Could a new PhD student reproduce this exactly from your notes alone?"
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="panel">
-        <div class="ptitle"><span class="ico">🎯</span>ACTIVE PROTOCOLS</div>
+        <div class="ptitle"><span class="ico">🎯</span>ACTIVE PROTOCOLS (<span id="protocol-count">0</span>)</div>
         <div id="habits-list"></div>
       </div>
     </div>
@@ -1244,15 +1274,14 @@ on  oninput="globalSearch()" style="width:200px;">
           </div>
           <div style="flex:0;min-width:130px;"><div class="lbl">CATEGORY</div>
             <select id="tcat"><option>RESEARCH</option><option>WRITING</option><option>ADMIN</option><option>PERSONAL</option></select>
-          <div style="flex:0;min-width:140px;">
-            <div class="lbl">STATUS</div>
+          </div>
+          <div style="flex:0;min-width:130px;"><div class="lbl">STATUS</div>
             <select id="tstatus">
-              <option value="planned">PLANNED</option>
-              <option value="running">RUNNING</option>
-              <option value="failed">FAILED</option>
-              <option value="published">PUBLISHED</option>
+              <option value="PLANNED">PLANNED</option>
+              <option value="RUNNING">RUNNING</option>
+              <option value="FAILED">FAILED</option>
+              <option value="PUBLISHED">PUBLISHED</option>
             </select>
-          </div> 
           </div>
           <button class="btn btn-c" onclick="addTask()" style="margin-top:18px;">// ADD</button>
         </div>
@@ -1268,6 +1297,72 @@ on  oninput="globalSearch()" style="width:200px;">
         </div>
       </div>
     </div>
+    <!-- ═══════════════ PAPER TRACKER ═══════════════ -->
+    <div class="module" id="mod-papers">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'VT323',monospace;font-size:28px;color:var(--green);text-shadow:var(--gg);letter-spacing:3px;">📄 PAPER SUBMISSION TRACKER</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;">Track every manuscript from first draft to publication. Never lose track of where a paper stands.</div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">✍</span>ADD MANUSCRIPT</div>
+        <div class="g2">
+          <div class="field"><div class="lbl">MANUSCRIPT TITLE</div>
+            <input id="sub-title" placeholder="Full manuscript title...">
+          </div>
+          <div class="field"><div class="lbl">TARGET JOURNAL</div>
+            <input id="sub-journal" placeholder="Nature, JACS, PLOS Comp Bio, bioRxiv...">
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field"><div class="lbl">STATUS</div>
+            <select id="sub-status">
+              <option value="DRAFTING">DRAFTING — Writing in progress</option>
+              <option value="INTERNAL_REVIEW">INTERNAL REVIEW — With co-authors</option>
+              <option value="SUBMITTED">SUBMITTED — Under review</option>
+              <option value="REVISIONS">REVISIONS — Major/minor revisions</option>
+              <option value="RESUBMITTED">RESUBMITTED — After revisions</option>
+              <option value="ACCEPTED">ACCEPTED — In production</option>
+              <option value="PUBLISHED">PUBLISHED — Live!</option>
+              <option value="REJECTED">REJECTED — Targeting elsewhere</option>
+            </select>
+          </div>
+          <div class="field"><div class="lbl">IMPACT FACTOR / TIER</div>
+            <input id="sub-if" placeholder="IF: 41.8 · Q1 · Top 5%">
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field"><div class="lbl">SUBMISSION DATE</div>
+            <input type="date" id="sub-date">
+          </div>
+          <div class="field"><div class="lbl">DECISION DEADLINE / EXPECTED</div>
+            <input type="date" id="sub-deadline">
+          </div>
+        </div>
+        <div class="field"><div class="lbl">CO-AUTHORS</div>
+          <input id="sub-authors" placeholder="Name1, Name2, ... Advisor Last">
+        </div>
+        <div class="field"><div class="lbl">NOTES / REVIEWER COMMENTS</div>
+          <textarea id="sub-notes" placeholder="Reviewer 1: Major concern about methodology...&#10;Editor note: Revise within 60 days...&#10;Action: Add supplementary figure S3..." style="min-height:90px;"></textarea>
+        </div>
+        <button class="btn btn-g" onclick="addSubmission()">// TRACK MANUSCRIPT</button>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">📊</span>SUBMISSION PIPELINE (<span id="sub-count">0</span>)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn btn-c btn-sm" onclick="filterSubs('all')">ALL</button>
+          <button class="btn btn-g btn-sm" onclick="filterSubs('DRAFTING')">DRAFTING</button>
+          <button class="btn btn-c btn-sm" onclick="filterSubs('SUBMITTED')">SUBMITTED</button>
+          <button class="btn btn-y btn-sm" onclick="filterSubs('REVISIONS')">REVISIONS</button>
+          <button class="btn btn-g btn-sm" onclick="filterSubs('PUBLISHED')">PUBLISHED ✓</button>
+          <button class="btn btn-p btn-sm" onclick="filterSubs('REJECTED')">REJECTED</button>
+        </div>
+        <div id="sub-list" class="slist"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 
     <!-- ═══════════════ ADVISOR SYNC ═══════════════ -->
     <div class="module" id="mod-advisor">
@@ -1353,19 +1448,70 @@ on  oninput="globalSearch()" style="width:200px;">
     </div>
 
     <!-- ═══════════════ PAPER TRACKER ═══════════════ -->
-    <div class="module" id="mod-papersub">
+   <div class="module" id="mod-papers">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'VT323',monospace;font-size:28px;color:var(--green);text-shadow:var(--gg);letter-spacing:3px;">📄 PAPER SUBMISSION TRACKER</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;">Track every manuscript from first draft to publication. Never lose track of where a paper stands.</div>
+      </div>
       <div class="panel">
-        <div class="ptitle">PAPER SUBMISSION TRACKER</div>
-
-        <input id="ps-title" placeholder="Paper title">
-        <input id="ps-status" placeholder="Submitted / Under Review / Accepted">
-        <input id="ps-venue" placeholder="Journal / Conference">
-
-        <button class="btn btn-g" onclick="addPaperSub()">ADD</button>
-
-        <div id="ps-list"></div>
+        <div class="ptitle"><span class="ico">✍</span>ADD MANUSCRIPT</div>
+        <div class="g2">
+          <div class="field"><div class="lbl">MANUSCRIPT TITLE</div>
+            <input id="sub-title" placeholder="Full manuscript title...">
+          </div>
+          <div class="field"><div class="lbl">TARGET JOURNAL</div>
+            <input id="sub-journal" placeholder="Nature, JACS, PLOS Comp Bio, bioRxiv...">
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field"><div class="lbl">STATUS</div>
+            <select id="sub-status">
+              <option value="DRAFTING">DRAFTING — Writing in progress</option>
+              <option value="INTERNAL_REVIEW">INTERNAL REVIEW — With co-authors</option>
+              <option value="SUBMITTED">SUBMITTED — Under review</option>
+              <option value="REVISIONS">REVISIONS — Major/minor revisions</option>
+              <option value="RESUBMITTED">RESUBMITTED — After revisions</option>
+              <option value="ACCEPTED">ACCEPTED — In production</option>
+              <option value="PUBLISHED">PUBLISHED — Live!</option>
+              <option value="REJECTED">REJECTED — Targeting elsewhere</option>
+            </select>
+          </div>
+          <div class="field"><div class="lbl">IMPACT FACTOR / TIER</div>
+            <input id="sub-if" placeholder="IF: 41.8 · Q1 · Top 5%">
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field"><div class="lbl">SUBMISSION DATE</div>
+            <input type="date" id="sub-date">
+          </div>
+          <div class="field"><div class="lbl">DECISION DEADLINE / EXPECTED</div>
+            <input type="date" id="sub-deadline">
+          </div>
+        </div>
+        <div class="field"><div class="lbl">CO-AUTHORS</div>
+          <input id="sub-authors" placeholder="Name1, Name2, ... Advisor Last">
+        </div>
+        <div class="field"><div class="lbl">NOTES / REVIEWER COMMENTS</div>
+          <textarea id="sub-notes" placeholder="Reviewer 1: Major concern about methodology...&#10;Editor note: Revise within 60 days...&#10;Action: Add supplementary figure S3..." style="min-height:90px;"></textarea>
+        </div>
+        <button class="btn btn-g" onclick="addSubmission()">// TRACK MANUSCRIPT</button>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="ico">📊</span>SUBMISSION PIPELINE (<span id="sub-count">0</span>)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn btn-c btn-sm" onclick="filterSubs('all')">ALL</button>
+          <button class="btn btn-g btn-sm" onclick="filterSubs('DRAFTING')">DRAFTING</button>
+          <button class="btn btn-c btn-sm" onclick="filterSubs('SUBMITTED')">SUBMITTED</button>
+          <button class="btn btn-y btn-sm" onclick="filterSubs('REVISIONS')">REVISIONS</button>
+          <button class="btn btn-g btn-sm" onclick="filterSubs('PUBLISHED')">PUBLISHED ✓</button>
+          <button class="btn btn-p btn-sm" onclick="filterSubs('REJECTED')">REJECTED</button>
+        </div>
+        <div id="sub-list" class="slist"></div>
       </div>
     </div>
+
+  </div>
+</div>
     
     <!-- ═══════════════ WHY ═══════════════ -->
     <div class="module" id="mod-why">
@@ -1413,22 +1559,9 @@ on  oninput="globalSearch()" style="width:200px;">
         </div>
       </div>
     </div>
-    <!-- ═══════════════ WHY ═══════════════ -->
-    <div class="module" id="mod-debug">
-      <div class="panel">
-        <div class="ptitle">ERROR DATABASE</div>
 
-      <input id="err-title" placeholder="Error name">
-      <textarea id="err-cause" placeholder="Cause"></textarea>
-      <textarea id="err-fix" placeholder="Fix"></textarea>
-
-      <button class="btn btn-p" onclick="addError()">SAVE</button>
-
-      <div id="err-list"></div>
-    </div>
-  </div>
     <!-- ═══════════════ CORE ═══════════════ -->
-    <div class="module" id="mod-core">
+     <div class="module" id="mod-core">
       <div class="g2">
         <div class="panel" style="text-align:center;">
           <div class="ptitle"><span class="ico">🔥</span>STREAK</div>
@@ -1447,18 +1580,14 @@ on  oninput="globalSearch()" style="width:200px;">
       <div class="panel">
         <div class="ptitle"><span class="ico">💀</span>NUCLEAR OPTION</div>
         <p style="font-size:12px;color:var(--dim);margin-bottom:12px;font-family:'Share Tech Mono',monospace;">WIPE ALL DATA. This cannot be undone. Export first if needed.</p>
-        <button class="btn btn-p" onclick="if(confirm('WIPE EVERYTHING?')){localStorage.clear();location.reload();}">// WIPE SYSTEM</button>
-      <div class="panel">
-        <div class="ptitle">BACKUP / EXPORT</div>
-
-        <button class="btn btn-c" onclick="exportData()">EXPORT JSON</button>
-        <input type="file" onchange="importData(event)">
-      </div> 
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-g" onclick="exportData()">// EXPORT BACKUP</button>
+          <button class="btn btn-c" onclick="document.getElementById('import-file').click()">// IMPORT BACKUP</button>
+          <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+          <button class="btn btn-p" onclick="if(confirm('WIPE EVERYTHING?')){localStorage.clear();location.reload();}">// WIPE SYSTEM</button>
+        </div>
       </div>
     </div>
-
-  </div>
-</div>
 
 <script>
 // ══════════════════════════════════
