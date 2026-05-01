@@ -929,6 +929,8 @@ select option { background:#060614; color:#fff; }
       <div class="logo-tag">PhD RESEARCH INTELLIGENCE</div>
     </div>
     <div class="topbar-right">
+    <input id="global-search" placeholder="Search everything..." 
+on  oninput="globalSearch()" style="width:200px;">
       <div class="operative-tag" id="operative-tag" onclick="openSettings()">
         <span class="operative-prefix">OPERATIVE //</span>
         <span class="operative-name" id="operative-name-display">SET YOUR NAME</span>
@@ -951,7 +953,9 @@ select option { background:#060614; color:#fff; }
     <button class="ntab" onclick="go('tasks',this)">▸ TASK QUEUE</button>
     <button class="ntab" onclick="go('advisor',this)">▸ ADVISOR SYNC</button>
     <button class="ntab" onclick="go('graph',this)">▸ CONCEPT GRAPH</button>
+    <button class="ntab" onclick="go('papersub',this)">▸ PAPER TRACKER</button>
     <button class="ntab" onclick="go('why',this)">▸ WHY</button>
+    <button class="ntab" onclick="go('debug',this)">▸ DEBUG DB</button>
     <button class="ntab" onclick="go('core',this)">▸ CORE</button>
     <div class="nav-deco">
   <svg viewBox="0 0 24 24"><polygon points="12,2 22,20 2,20" fill="none" stroke="#00ffff" stroke-width="1.5"/></svg>
@@ -968,6 +972,17 @@ select option { background:#060614; color:#fff; }
       <div class="motive" id="dash-motive"></div>
       <hr class="sep">
       <div class="g2">
+      <div class="panel">
+        <div class="ptitle">INSIGHTS / FINDINGS</div>
+
+        <div class="field">
+          <input id="insight-input" placeholder="Short takeaway...">
+        </div>
+
+        <button class="btn btn-c" onclick="addInsight()">ADD INSIGHT</button>
+
+        <div id="insight-list"></div>
+      </div> 
         <div>
           <div class="panel">
             <div class="ptitle"><span class="ico">⚡</span>TODAY'S PROTOCOLS</div>
@@ -1009,6 +1024,16 @@ select option { background:#060614; color:#fff; }
           <div class="field"><div class="lbl">POTENTIAL EXPERIMENT IDEAS ★</div><textarea id="pex" placeholder="What experiments could this inspire?" style="min-height:70px;"></textarea></div>
         </div>
         <div class="field"><div class="lbl">LINK TO HYPOTHESIS (ID or name)</div><input id="plink" placeholder="Optional: connect to a hypothesis..."></div>
+        <div class="field">
+          <div class="lbl">ANNOTATED NOTES</div>
+          <textarea id="pnotes" placeholder="Your interpretation, critique, connections..."></textarea>
+        </div>
+
+        <div class="field">
+          <div class="lbl">LINK TO EXPERIMENT</div>
+          <input id="pexplink" placeholder="Experiment ID or name">
+        </div>
+        
         <button class="btn btn-c" onclick="addPaper()">// UPLOAD TO ARCHIVE</button>
       </div>
 
@@ -1163,6 +1188,25 @@ select option { background:#060614; color:#fff; }
       <div class="g2">
         <div class="panel">
           <div class="ptitle"><span class="ico">⚡</span>ADD PROTOCOL</div>
+          <hr class="sep">
+
+          <div class="ptitle">REPRODUCIBILITY</div>
+
+          <div class="field">
+            <div class="lbl">SCRIPTS (GROMACS / PLUMED)</div>
+            <textarea id="rscript"></textarea>
+          </div>
+
+          <div class="field">
+            <div class="lbl">INPUT FILES (.mdp, .top)</div>
+            <textarea id="rinput"></textarea>
+          </div>
+
+          <div class="field">
+            <div class="lbl">STEP-BY-STEP PROTOCOL</div>
+            <textarea id="rsteps"></textarea>
+          </div>
+          
           <div class="field"><div class="lbl">PROTOCOL NAME</div>
             <input id="hname" placeholder="e.g. Read papers 45min, Meditate, Write 500 words...">
           </div>
@@ -1200,6 +1244,15 @@ select option { background:#060614; color:#fff; }
           </div>
           <div style="flex:0;min-width:130px;"><div class="lbl">CATEGORY</div>
             <select id="tcat"><option>RESEARCH</option><option>WRITING</option><option>ADMIN</option><option>PERSONAL</option></select>
+          <div style="flex:0;min-width:140px;">
+            <div class="lbl">STATUS</div>
+            <select id="tstatus">
+              <option value="planned">PLANNED</option>
+              <option value="running">RUNNING</option>
+              <option value="failed">FAILED</option>
+              <option value="published">PUBLISHED</option>
+            </select>
+          </div> 
           </div>
           <button class="btn btn-c" onclick="addTask()" style="margin-top:18px;">// ADD</button>
         </div>
@@ -1299,6 +1352,21 @@ select option { background:#060614; color:#fff; }
       <canvas id="concept-canvas"></canvas>
     </div>
 
+    <!-- ═══════════════ PAPER TRACKER ═══════════════ -->
+    <div class="module" id="mod-papersub">
+      <div class="panel">
+        <div class="ptitle">PAPER SUBMISSION TRACKER</div>
+
+        <input id="ps-title" placeholder="Paper title">
+        <input id="ps-status" placeholder="Submitted / Under Review / Accepted">
+        <input id="ps-venue" placeholder="Journal / Conference">
+
+        <button class="btn btn-g" onclick="addPaperSub()">ADD</button>
+
+        <div id="ps-list"></div>
+      </div>
+    </div>
+    
     <!-- ═══════════════ WHY ═══════════════ -->
     <div class="module" id="mod-why">
       <div class="why-panel">
@@ -1345,7 +1413,20 @@ select option { background:#060614; color:#fff; }
         </div>
       </div>
     </div>
+    <!-- ═══════════════ WHY ═══════════════ -->
+    <div class="module" id="mod-debug">
+      <div class="panel">
+        <div class="ptitle">ERROR DATABASE</div>
 
+      <input id="err-title" placeholder="Error name">
+      <textarea id="err-cause" placeholder="Cause"></textarea>
+      <textarea id="err-fix" placeholder="Fix"></textarea>
+
+      <button class="btn btn-p" onclick="addError()">SAVE</button>
+
+      <div id="err-list"></div>
+    </div>
+  </div>
     <!-- ═══════════════ CORE ═══════════════ -->
     <div class="module" id="mod-core">
       <div class="g2">
@@ -1367,6 +1448,12 @@ select option { background:#060614; color:#fff; }
         <div class="ptitle"><span class="ico">💀</span>NUCLEAR OPTION</div>
         <p style="font-size:12px;color:var(--dim);margin-bottom:12px;font-family:'Share Tech Mono',monospace;">WIPE ALL DATA. This cannot be undone. Export first if needed.</p>
         <button class="btn btn-p" onclick="if(confirm('WIPE EVERYTHING?')){localStorage.clear();location.reload();}">// WIPE SYSTEM</button>
+      <div class="panel">
+        <div class="ptitle">BACKUP / EXPORT</div>
+
+        <button class="btn btn-c" onclick="exportData()">EXPORT JSON</button>
+        <input type="file" onchange="importData(event)">
+      </div> 
       </div>
     </div>
 
