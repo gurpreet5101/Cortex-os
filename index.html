@@ -1363,7 +1363,6 @@ on  oninput="globalSearch()" style="width:200px;">
   </div>
 </div>
 
-
     <!-- ═══════════════ ADVISOR SYNC ═══════════════ -->
     <div class="module" id="mod-advisor">
       <div class="panel">
@@ -1447,72 +1446,6 @@ on  oninput="globalSearch()" style="width:200px;">
       <canvas id="concept-canvas"></canvas>
     </div>
 
-    <!-- ═══════════════ PAPER TRACKER ═══════════════ -->
-   <div class="module" id="mod-papers">
-      <div style="margin-bottom:16px;">
-        <div style="font-family:'VT323',monospace;font-size:28px;color:var(--green);text-shadow:var(--gg);letter-spacing:3px;">📄 PAPER SUBMISSION TRACKER</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;">Track every manuscript from first draft to publication. Never lose track of where a paper stands.</div>
-      </div>
-      <div class="panel">
-        <div class="ptitle"><span class="ico">✍</span>ADD MANUSCRIPT</div>
-        <div class="g2">
-          <div class="field"><div class="lbl">MANUSCRIPT TITLE</div>
-            <input id="sub-title" placeholder="Full manuscript title...">
-          </div>
-          <div class="field"><div class="lbl">TARGET JOURNAL</div>
-            <input id="sub-journal" placeholder="Nature, JACS, PLOS Comp Bio, bioRxiv...">
-          </div>
-        </div>
-        <div class="g2">
-          <div class="field"><div class="lbl">STATUS</div>
-            <select id="sub-status">
-              <option value="DRAFTING">DRAFTING — Writing in progress</option>
-              <option value="INTERNAL_REVIEW">INTERNAL REVIEW — With co-authors</option>
-              <option value="SUBMITTED">SUBMITTED — Under review</option>
-              <option value="REVISIONS">REVISIONS — Major/minor revisions</option>
-              <option value="RESUBMITTED">RESUBMITTED — After revisions</option>
-              <option value="ACCEPTED">ACCEPTED — In production</option>
-              <option value="PUBLISHED">PUBLISHED — Live!</option>
-              <option value="REJECTED">REJECTED — Targeting elsewhere</option>
-            </select>
-          </div>
-          <div class="field"><div class="lbl">IMPACT FACTOR / TIER</div>
-            <input id="sub-if" placeholder="IF: 41.8 · Q1 · Top 5%">
-          </div>
-        </div>
-        <div class="g2">
-          <div class="field"><div class="lbl">SUBMISSION DATE</div>
-            <input type="date" id="sub-date">
-          </div>
-          <div class="field"><div class="lbl">DECISION DEADLINE / EXPECTED</div>
-            <input type="date" id="sub-deadline">
-          </div>
-        </div>
-        <div class="field"><div class="lbl">CO-AUTHORS</div>
-          <input id="sub-authors" placeholder="Name1, Name2, ... Advisor Last">
-        </div>
-        <div class="field"><div class="lbl">NOTES / REVIEWER COMMENTS</div>
-          <textarea id="sub-notes" placeholder="Reviewer 1: Major concern about methodology...&#10;Editor note: Revise within 60 days...&#10;Action: Add supplementary figure S3..." style="min-height:90px;"></textarea>
-        </div>
-        <button class="btn btn-g" onclick="addSubmission()">// TRACK MANUSCRIPT</button>
-      </div>
-      <div class="panel">
-        <div class="ptitle"><span class="ico">📊</span>SUBMISSION PIPELINE (<span id="sub-count">0</span>)</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-          <button class="btn btn-c btn-sm" onclick="filterSubs('all')">ALL</button>
-          <button class="btn btn-g btn-sm" onclick="filterSubs('DRAFTING')">DRAFTING</button>
-          <button class="btn btn-c btn-sm" onclick="filterSubs('SUBMITTED')">SUBMITTED</button>
-          <button class="btn btn-y btn-sm" onclick="filterSubs('REVISIONS')">REVISIONS</button>
-          <button class="btn btn-g btn-sm" onclick="filterSubs('PUBLISHED')">PUBLISHED ✓</button>
-          <button class="btn btn-p btn-sm" onclick="filterSubs('REJECTED')">REJECTED</button>
-        </div>
-        <div id="sub-list" class="slist"></div>
-      </div>
-    </div>
-
-  </div>
-</div>
-    
     <!-- ═══════════════ WHY ═══════════════ -->
     <div class="module" id="mod-why">
       <div class="why-panel">
